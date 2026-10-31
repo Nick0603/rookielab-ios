@@ -7,17 +7,23 @@
 #   2. 在 ~/.zshrc 或 ~/.bash_profile 設：
 #        export ASC_KEY_ID=XXXXXXXXXX        # key 的 ID
 #        export ASC_ISSUER_ID=xxxxxxxx-...   # 頁面上方的 Issuer ID
-#        export ASC_TEAM_ID=XXXXXXXXXX       # 開發者帳號的 Team ID（developer.apple.com → Membership）
+#        export ASC_TEAM_ID=XXXXXXXXXX       # 選填，預設 L756RGRFW2
+#      沒設 key 也可以：用 Xcode 裡登入的 Apple 帳號上傳
 #   3. 在 App Store Connect 先建好 App（Bundle ID：io.rookielab.app）
 # 用法：ios/testflight.sh            版本號照 project.yml，build 號自動用時間
 set -euo pipefail
 cd "$(dirname "$0")"
 
-: "${ASC_KEY_ID:?先設 ASC_KEY_ID（見檔案開頭說明）}"
-: "${ASC_ISSUER_ID:?先設 ASC_ISSUER_ID}"
-: "${ASC_TEAM_ID:?先設 ASC_TEAM_ID（付費帳號的 Team ID，不是免費的 Personal Team）}"
-KEY="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
-[[ -f "$KEY" ]] || { echo "找不到 $KEY"; exit 1; }
+# 金鑰設定（ASC_KEY_ID、ASC_ISSUER_ID）可以放在 ~/.appstoreconnect/env
+[[ -f "$HOME/.appstoreconnect/env" ]] && source "$HOME/.appstoreconnect/env"
+: "${ASC_TEAM_ID:=L756RGRFW2}"
+# 有 API key 就用 key；沒有就用 Xcode 裡登入的 Apple 帳號（Xcode → Settings → Accounts）
+AUTH=(-allowProvisioningUpdates)
+if [[ -n "${ASC_KEY_ID:-}" && -n "${ASC_ISSUER_ID:-}" ]]; then
+  KEY="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+  [[ -f "$KEY" ]] || { echo "找不到 $KEY"; exit 1; }
+  AUTH+=(-authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+fi
 
 XCODE_MAJOR=$(xcodebuild -version | awk '/^Xcode/ {split($2, v, "."); print v[1]}')
 (( XCODE_MAJOR >= 26 )) || { echo "要 Xcode 26 以上才能上傳（現在是 $(xcodebuild -version | head -1)）"; exit 1; }
@@ -26,7 +32,6 @@ command -v xcodegen >/dev/null || brew install xcodegen
 xcodegen generate --quiet
 
 BUILD=$(date +%Y%m%d%H%M)
-AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
 
 echo "▶ 封存（build ${BUILD}）"
 xcodebuild -project RookieLab.xcodeproj -scheme RookieLab -configuration Release \
@@ -41,7 +46,13 @@ cat > build/ExportOptions.plist <<PLIST
   <key>method</key><string>app-store-connect</string>
   <key>destination</key><string>upload</string>
   <key>teamID</key><string>${ASC_TEAM_ID}</string>
-  <key>signingStyle</key><string>automatic</string>
+  <!-- 手動簽名：App 管理權限的 API key 不能用雲端代管憑證。憑證與描述檔用 API 建好放在本機（Apple Distribution: JIAN YU Chen） -->
+  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <key>provisioningProfiles</key><dict>
+    <key>io.rookielab.app</key><string>Rookie Lab AppStore io.rookielab.app</string>
+    <key>io.rookielab.app.share</key><string>Rookie Lab AppStore io.rookielab.app.share</string>
+  </dict>
   <key>uploadSymbols</key><true/>
 </dict></plist>
 PLIST

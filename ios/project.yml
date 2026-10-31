@@ -58,6 +58,9 @@ targets:
     info:
       path: RookieLab/Info.plist
       properties:
+        # 版本號跟 build 號照 MARKETING_VERSION／CURRENT_PROJECT_VERSION（testflight.sh 每次給新的 build 號）
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: Rookie Lab
         CFBundleDevelopmentRegion: zh-Hant
         UILaunchScreen:
@@ -74,8 +77,6 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_BASE)
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        # 標誌候選 A、B：「我的」頁可以換圖示（scripts/render-icon-options.tsx 產生）
-        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "IconA IconB"
         # 第一版只上 iPhone（iPad 要另外的截圖與審核）
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
@@ -89,6 +90,9 @@ targets:
     info:
       path: RookieLabShare/Info.plist
       properties:
+        # 版本號跟 build 號照 MARKETING_VERSION／CURRENT_PROJECT_VERSION（testflight.sh 每次給新的 build 號）
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: Rookie Lab
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services

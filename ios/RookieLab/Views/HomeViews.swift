@@ -45,6 +45,9 @@ final class AppModel {
     #endif
     if account != nil { Task { await load() } }
     #if DEBUG
+    // 開發用：-tab report|practice|analysis|me 直接開那個分頁（練習的示範參數也會切過去）
+    if let i = args.firstIndex(of: "-tab"), i + 1 < args.count, let t = ["games": AppTab.games, "report": .report, "practice": .practice, "analysis": .analysis, "me": .me][args[i + 1]] { tab = t }
+    if args.contains("-demoPuzzle") || args.contains("-demoLesson") { tab = .practice }
     // 開發用：-import <對局連結> 模擬從分享延伸打開
     if let i = args.firstIndex(of: "-import"), i + 1 < args.count {
       let link = args[i + 1]
@@ -278,7 +281,7 @@ enum GameLink {
   }
 }
 
-/// 開啟動畫：貓咪跳出來點個頭、名字升上來，接著淡出到主畫面（約 1.2 秒）
+/// 開啟動畫：標誌跳出來點個頭、名字升上來，接著淡出到主畫面（約 1.2 秒）
 struct SplashView: View {
   let done: () -> Void
   @State private var pop = false
@@ -627,7 +630,6 @@ struct MeView: View {
   @State private var remind = Notifier.enabled
   @State private var remindHour = Notifier.hour
   @State private var autoAdd = AutoAnalyzer.autoAdd
-  @State private var icon = UIApplication.shared.alternateIconName ?? ""
 
   var body: some View {
     List {
@@ -677,18 +679,6 @@ struct MeView: View {
         Text("設定")
       } footer: {
         Text("提醒一天最多一則，今天練過就不吵你。走子聲音選了會先播一次給你聽。")
-      }
-      Section {
-        Picker("App 圖示", selection: Binding(get: { icon }, set: { v in
-          icon = v
-          UIApplication.shared.setAlternateIconName(v.isEmpty ? nil : v)
-        })) {
-          Text("兩隻貓").tag("")
-          Text("A 棋格").tag("IconA")
-          Text("B 放大鏡兵").tag("IconB")
-        }
-      } footer: {
-        Text("新標誌還在挑，換一個回主畫面看看哪個好認。")
       }
       Section {
         Button { feedback = true } label: { Label("給我們回饋", systemImage: "bubble.left.and.text.bubble.right") }
