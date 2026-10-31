@@ -17,7 +17,7 @@ struct RookieLabApp: App {
     }
     .onChange(of: phase) { _, p in
       if p == .active { Notifier.reschedule() }
-      if p == .background { Self.scheduleRefresh() }
+      if p == .background { Self.scheduleRefresh(); Telemetry.flush() }
     }
     .backgroundTask(.appRefresh(Self.refreshId)) { await Self.checkNewGames() }
   }
