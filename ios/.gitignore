@@ -1,0 +1,6 @@
+RookieLab.xcodeproj/
+build/
+DerivedData/
+*.xcuserstate
+Vendor/
+build-me/

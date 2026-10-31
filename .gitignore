@@ -1,0 +1,5 @@
+node_modules/
+ios/build/
+ios/RookieLab.xcodeproj/
+ios/RookieLab/Firebase/
+.DS_Store
