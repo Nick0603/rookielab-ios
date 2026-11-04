@@ -7,36 +7,36 @@ import UIKit
 /// 設計見 docs/feedback-flow.md
 enum Feedback {
   static let tasks: [(String, String)] = [
-    ("review", "復盤一局"), ("report", "看分析報告"), ("daily", "每日複習"), ("puzzles", "主題謎題"),
-    ("board", "分析板"), ("other", "其他"),
+    ("review", String(localized: "復盤一局")), ("report", String(localized: "看分析報告")), ("daily", String(localized: "每日複習")), ("puzzles", String(localized: "主題謎題")),
+    ("board", String(localized: "分析板")), ("other", String(localized: "其他")),
   ]
-  static let done: [(String, String)] = [("yes", "有"), ("partly", "部分完成"), ("no", "沒有")]
-  static let types: [(String, String)] = [("bug", "遇到問題或錯誤"), ("idea", "想要的功能"), ("confuse", "哪裡看不懂"), ("note", "只是想說說感想")]
+  static let done: [(String, String)] = [("yes", String(localized: "有")), ("partly", String(localized: "部分完成")), ("no", String(localized: "沒有"))]
+  static let types: [(String, String)] = [("bug", String(localized: "遇到問題或錯誤")), ("idea", String(localized: "想要的功能")), ("confuse", String(localized: "哪裡看不懂")), ("note", String(localized: "只是想說說感想"))]
   static let bands: [(String, String)] = [
-    ("A", "550 以下"), ("B", "551–850"), ("C", "851–1150"), ("D", "1151–1450"), ("E", "1451–1750"), ("F", "1751 以上"), ("unknown", "不確定"),
+    ("A", String(localized: "550 以下")), ("B", "551–850"), ("C", "851–1150"), ("D", "1151–1450"), ("E", "1451–1750"), ("F", String(localized: "1751 以上")), ("unknown", String(localized: "不確定")),
   ]
 
   struct Question: Identifiable { let key: String; let label: String; var hint: String? = nil; var required = false; var long = false; var id: String { key } }
 
   static let branch: [String: [Question]] = [
     "bug": [
-      .init(key: "what", label: "發生了什麼事？", required: true, long: true),
-      .init(key: "expected", label: "你原本預期會怎樣？"),
-      .init(key: "where", label: "是哪一局、哪一步？", hint: "貼對局網址，或寫「第 12 手」"),
+      .init(key: "what", label: String(localized: "發生了什麼事？"), required: true, long: true),
+      .init(key: "expected", label: String(localized: "你原本預期會怎樣？")),
+      .init(key: "where", label: String(localized: "是哪一局、哪一步？"), hint: String(localized: "貼對局網址，或寫「第 12 手」")),
     ],
     "idea": [
-      .init(key: "want", label: "你想要什麼？", required: true, long: true),
-      .init(key: "now", label: "現在你是怎麼做到這件事的？", hint: "例如用 chess.com、別的 App，或還沒辦法做到", long: true),
+      .init(key: "want", label: String(localized: "你想要什麼？"), required: true, long: true),
+      .init(key: "now", label: String(localized: "現在你是怎麼做到這件事的？"), hint: String(localized: "例如用 chess.com、別的 App，或還沒辦法做到"), long: true),
     ],
     "confuse": [
-      .init(key: "which", label: "哪一段看不懂？", required: true, long: true),
-      .init(key: "meant", label: "你覺得它應該是在說什麼？", long: true),
+      .init(key: "which", label: String(localized: "哪一段看不懂？"), required: true, long: true),
+      .init(key: "meant", label: String(localized: "你覺得它應該是在說什麼？"), long: true),
     ],
     "note": [],
   ]
   static let common: [Question] = [
-    .init(key: "helpful", label: "最有幫助的一件事"),
-    .init(key: "change", label: "最想改的一件事", long: true),
+    .init(key: "helpful", label: String(localized: "最有幫助的一件事")),
+    .init(key: "change", label: String(localized: "最想改的一件事"), long: true),
   ]
 
   /// 分數 → 分數段（網站 prescription.ts 的 BANDS）
@@ -81,9 +81,9 @@ enum Feedback {
     case rate, invalid(String), network
     var errorDescription: String? {
       switch self {
-      case .rate: "送太多次了，過幾分鐘再試"
-      case let .invalid(f): "有一題還沒填（\(f)）"
-      case .network: "暫時送不出去，檢查網路後再試"
+      case .rate: String(localized: "送太多次了，過幾分鐘再試")
+      case let .invalid(f): String(localized: "有一題還沒填（\(f)）")
+      case .network: String(localized: "暫時送不出去，檢查網路後再試")
       }
     }
   }
@@ -164,7 +164,7 @@ struct FeedbackForm: View {
       .background(Brand.paper)
       .navigationTitle("給我們回饋").navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .cancellationAction) { Button(sent ? "完成" : "關閉") { dismiss() } }
+        ToolbarItem(placement: .cancellationAction) { Button(sent ? String(localized: "完成") : String(localized: "關閉")) { dismiss() } }
       }
     }
     .onAppear { AppLog.add("open", "feedback:\(trigger)") }
@@ -225,7 +225,7 @@ struct FeedbackForm: View {
       }
       .buttonStyle(.borderedProminent).tint(Brand.orange)
     } else {
-      Text(email.isEmpty ? "每一則都會看，改好的會出現在之後的版本。" : "改好之後會寄信告訴你。").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+      Text(email.isEmpty ? String(localized: "每一則都會看，改好的會出現在之後的版本。") : String(localized: "改好之後會寄信告訴你。")).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
     }
   }
 
@@ -239,7 +239,7 @@ struct FeedbackForm: View {
       score: score, task: Feedback.tasks.contains { $0.0 == task } ? task : "other", done: "yes", type: "note", trigger: trigger,
       answers: note.isEmpty ? [:] : ["change": note],
       band: Feedback.band(app.games.first?.myRating), email: email.isEmpty ? nil : email, interview: false,
-      page: "ios:\(trigger)", locale: "zh", version: Feedback.version, device: Feedback.device,
+      page: "ios:\(trigger)", locale: AppLang.code, version: Feedback.version, device: Feedback.device,
       context: attach ? Feedback.context(app: app) : nil, logs: attach ? AppLog.entries : nil)
     do {
       try await Feedback.send(p)
@@ -247,7 +247,7 @@ struct FeedbackForm: View {
       withAnimation { sent = true }
     } catch {
       // 高分只是記分數：送不出去也直接謝謝（不擋著）
-      if happy { withAnimation { sent = true } } else { self.error = (error as? LocalizedError)?.errorDescription ?? "暫時送不出去，等一下再試" }
+      if happy { withAnimation { sent = true } } else { self.error = (error as? LocalizedError)?.errorDescription ?? String(localized: "暫時送不出去，等一下再試") }
     }
   }
 }

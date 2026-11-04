@@ -17,19 +17,17 @@ struct PuzzleItem: Identifiable, Hashable {
   /// 出自哪一局的第幾手（可以回到那局看）
   var gameId: String?
   var ply: Int?
-  /// 這一輪剛剛沒走到、隔幾題再出一次的（不重複排複習）
-  var again = false
   /// 開頭的提示：這題是機會還是風險（跟單局快速復盤一樣）
   var risk = false
 
   var lead: (title: String, detail: String?) {
-    risk ? ("這一步要小心。", headline) : ("這裡有個機會！", headline ?? (subtitle.isEmpty ? nil : subtitle))
+    risk ? (String(localized: "這一步要小心。"), headline) : (String(localized: "這裡有個機會！"), headline ?? (subtitle.isEmpty ? nil : subtitle))
   }
 
   init(card c: ReviewCard) {
     id = c.id; fen = c.fen; moves = c.moves; autoFirst = false; accept = c.accept ?? []
-    title = "\(c.date.formatted(.dateTime.month().day()))・vs \(c.opponent)・第 \(c.moveNumber) 手"
-    subtitle = "這局你走了 \(c.played)，錯過了更好的一步"
+    title = String(localized: "\(c.date.formatted(.dateTime.month().day()))・vs \(c.opponent)・第 \(c.moveNumber) 手")
+    subtitle = String(localized: "這局你走了 \(c.played)，錯過了更好的一步")
     cardId = c.id; headline = c.headline; why = c.why ?? []
     gameId = c.gameId; ply = c.ply
     // 舊規則收的題（不一定是錯失的機會）多半是失誤：提示要小心
@@ -46,28 +44,49 @@ enum PuzzleBank {
   struct Theme: Identifiable, Hashable { let key: String; let name: String; let goal: String; var id: String { key } }
 
   static let themes: [Theme] = [
-    .init(key: "hanging", name: "白吃的子", goal: "有子沒人保護，把它吃下來"),
-    .init(key: "fork", name: "捉雙", goal: "找一步同時攻擊兩個子"),
-    .init(key: "pin", name: "牽制", goal: "讓對手的子動不了，或利用被牽制的子"),
-    .init(key: "skewer", name: "串打", goal: "攻擊前面的大子，逼它讓開後吃後面的"),
-    .init(key: "discovered", name: "閃擊", goal: "移開一個子，讓後面的子打出去"),
-    .init(key: "mate1", name: "一步殺", goal: "找出一步將死"),
-    .init(key: "mate2", name: "兩步殺", goal: "兩步之內將死"),
-    .init(key: "backrank", name: "底線殺", goal: "對手的王被自己的兵關在底線"),
-    .init(key: "trapped", name: "困子", goal: "把對手的子困住再吃掉"),
-    .init(key: "promotion", name: "升變", goal: "把兵送到底升后"),
-    .init(key: "pawnEnd", name: "兵殘局", goal: "王要主動上前；算清楚誰先升變"),
-    .init(key: "rookEnd", name: "車殘局", goal: "車放在兵的後面、車要主動"),
-    .init(key: "minorEnd", name: "輕子殘局", goal: "象怕兵卡在同色格，馬怕邊兵"),
-    .init(key: "queenEnd", name: "后殘局", goal: "先顧好自己的王，小心長將"),
+    .init(key: "hanging", name: String(localized: "白吃的子"), goal: String(localized: "有子沒人保護，把它吃下來")),
+    .init(key: "fork", name: String(localized: "捉雙"), goal: String(localized: "找一步同時攻擊兩個子")),
+    .init(key: "pin", name: String(localized: "牽制"), goal: String(localized: "讓對手的子動不了，或利用被牽制的子")),
+    .init(key: "skewer", name: String(localized: "串打"), goal: String(localized: "攻擊前面的大子，逼它讓開後吃後面的")),
+    .init(key: "discovered", name: String(localized: "閃擊"), goal: String(localized: "移開一個子，讓後面的子打出去")),
+    .init(key: "mate1", name: String(localized: "一步殺"), goal: String(localized: "找出一步將死")),
+    .init(key: "mate2", name: String(localized: "兩步殺"), goal: String(localized: "兩步之內將死")),
+    .init(key: "backrank", name: String(localized: "底線殺"), goal: String(localized: "對手的王被自己的兵關在底線")),
+    .init(key: "trapped", name: String(localized: "困子"), goal: String(localized: "把對手的子困住再吃掉")),
+    .init(key: "promotion", name: String(localized: "升變"), goal: String(localized: "把兵送到底升后")),
+    .init(key: "pawnEnd", name: String(localized: "兵殘局"), goal: String(localized: "王要主動上前；算清楚誰先升變")),
+    .init(key: "rookEnd", name: String(localized: "車殘局"), goal: String(localized: "車放在兵的後面、車要主動")),
+    .init(key: "minorEnd", name: String(localized: "輕子殘局"), goal: String(localized: "象怕兵卡在同色格，馬怕邊兵")),
+    .init(key: "queenEnd", name: String(localized: "后殘局"), goal: String(localized: "先顧好自己的王，小心長將")),
   ]
 
   private struct Raw: Decodable { let id: String; let fen: String; let moves: [String]; let rating: Int? }
 
-  /// 做過的題（下一組不再出，讓人一直有新題目）
-  static var seen: Set<String> {
-    get { Set(UserDefaults.standard.stringArray(forKey: "seenPuzzles") ?? []) }
-    set { UserDefaults.standard.set(Array(newValue.suffix(3000)), forKey: "seenPuzzles") }
+  /// 舊紀錄沒有日期，第一次讀到時以今天起算冷卻，避免升級後立即重出。
+  static var lastSeen: [String: Int] {
+    get {
+      if let saved = UserDefaults.standard.dictionary(forKey: "puzzleLastSeen") as? [String: Int] { return saved }
+      let old = UserDefaults.standard.stringArray(forKey: "seenPuzzles") ?? []
+      let migrated = Dictionary(uniqueKeysWithValues: Set(old).map { ($0, Day.number()) })
+      UserDefaults.standard.set(migrated, forKey: "puzzleLastSeen")
+      return migrated
+    }
+    set { UserDefaults.standard.set(newValue, forKey: "puzzleLastSeen") }
+  }
+
+  static func recordSeen(_ id: String) { lastSeen[puzzleKey(id)] = Day.number() }
+
+  private static func puzzleKey(_ id: String) -> String { String(id.split(separator: ":").last ?? Substring(id)) }
+
+  /// 沒做過的先；做過的至少隔三天，最久沒練的先。
+  static func pickIDs(_ ids: [String], seen: [String: Int], today: Int, n: Int) -> [String] {
+    // 同一題可能屬於多個主題，共用最後練習日期。
+    var dates: [String: Int] = [:]
+    for (id, day) in seen { dates[puzzleKey(id)] = max(dates[puzzleKey(id)] ?? day, day) }
+    let fresh = ids.filter { dates[puzzleKey($0)] == nil }
+    let due = ids.filter { dates[puzzleKey($0)].map { today - $0 >= ReviewStore.minimumInterval } ?? false }
+      .sorted { dates[puzzleKey($0)]! < dates[puzzleKey($1)]! }
+    return Array((fresh + due).prefix(max(0, n)))
   }
 
   /// 本週重點（報告的「先學的一件事」對到的主題）
@@ -86,13 +105,12 @@ enum PuzzleBank {
           let (d, r) = try? await URLSession.shared.data(from: url), (r as? HTTPURLResponse)?.statusCode == 200,
           let all = try? JSONDecoder().decode([Raw].self, from: d) else { return [] }
     let target = rating.map { Explorer.lichessRating($0, platform: platform) } ?? 1200
-    let seen = Self.seen
-    let fresh = all.filter { !seen.contains("\(t.key):\($0.id)") }
-    let src = fresh.count >= n ? fresh : all
-    let near = src.filter { abs(($0.rating ?? target) - target) <= 350 }
-    let pool = near.count >= n ? near : src.sorted { abs(($0.rating ?? 0) - target) < abs(($1.rating ?? 0) - target) }
-    return pool.shuffled().prefix(n).map {
-      PuzzleItem(id: "\(t.key):\($0.id)", fen: $0.fen, moves: $0.moves, autoFirst: true, title: t.name, subtitle: t.goal)
+    let ranked = all.shuffled().sorted { abs(($0.rating ?? target) - target) < abs(($1.rating ?? target) - target) }
+    let ids = pickIDs(ranked.map { "\(t.key):\($0.id)" }, seen: lastSeen, today: Day.number(), n: n)
+    let byID = Dictionary(uniqueKeysWithValues: all.map { ("\(t.key):\($0.id)", $0) })
+    return ids.compactMap { id in
+      guard let p = byID[id] else { return nil }
+      return PuzzleItem(id: id, fen: p.fen, moves: p.moves, autoFirst: true, title: t.name, subtitle: t.goal)
     }
   }
 }
@@ -106,11 +124,11 @@ struct EndgameBasic: Identifiable, Hashable {
   var id: String { key }
 
   static let all: [EndgameBasic] = [
-    .init(key: "kq", name: "后殺單王", goal: "用后和王把對方的王逼到邊上將死", fen: "8/8/8/4k3/8/8/8/4K2Q w - - 0 1", side: .white),
-    .init(key: "kr", name: "車殺單王", goal: "用車一排一排縮小王的空間", fen: "8/8/8/4k3/8/8/8/R3K3 w - - 0 1", side: .white),
-    .init(key: "kp", name: "王兵對王", goal: "王走在兵前面，把兵送到底升后", fen: "4k3/8/4K3/4P3/8/8/8/8 w - - 0 1", side: .white),
-    .init(key: "lucena", name: "Lucena 局面", goal: "車兵對車要贏：用車「搭橋」擋住將軍", fen: "1K6/1P1k4/8/8/8/8/r7/2R5 w - - 0 1", side: .white),
-    .init(key: "philidor", name: "Philidor 局面", goal: "少一個兵要守和：車守第六排，兵上來就從後面將軍", fen: "4k3/8/r7/4PK2/8/8/8/7R b - - 0 1", side: .black, limit: 30),
+    .init(key: "kq", name: String(localized: "后殺單王"), goal: String(localized: "用后和王把對方的王逼到邊上將死"), fen: "8/8/8/4k3/8/8/8/4K2Q w - - 0 1", side: .white),
+    .init(key: "kr", name: String(localized: "車殺單王"), goal: String(localized: "用車一排一排縮小王的空間"), fen: "8/8/8/4k3/8/8/8/R3K3 w - - 0 1", side: .white),
+    .init(key: "kp", name: String(localized: "王兵對王"), goal: String(localized: "王走在兵前面，把兵送到底升后"), fen: "4k3/8/4K3/4P3/8/8/8/8 w - - 0 1", side: .white),
+    .init(key: "lucena", name: String(localized: "Lucena 局面"), goal: String(localized: "車兵對車要贏：用車「搭橋」擋住將軍"), fen: "1K6/1P1k4/8/8/8/8/r7/2R5 w - - 0 1", side: .white),
+    .init(key: "philidor", name: String(localized: "Philidor 局面"), goal: String(localized: "少一個兵要守和：車守第六排，兵上來就從後面將軍"), fen: "4k3/8/r7/4PK2/8/8/8/7R b - - 0 1", side: .black, limit: 30),
   ]
 }
 
@@ -127,6 +145,29 @@ struct PracticeView: View {
   @State private var endgame: EndgameBasic?
   @State private var loadError: String?
   @State private var preparing = false
+  @State private var paywall = false
+  @State private var openingRoutes: [OpeningRoute] = []
+  @State private var showOpeningDaily = false
+  @State private var continueAfterOpenings = false
+  @State private var openingReview = OpeningReviewStore.shared
+
+  private var openingDue: Int { openingReview.due(account: app.account?.id ?? "local").count }
+
+  /// 開始今天的練習（按鈕、Siri／捷徑、小工具都走這裡）
+  private func startToday() {
+    guard !preparing else { return }
+    // 每天的 5 題免費；做完之後再練一組是 Premium
+    if store.todayCount >= Self.daily, !Premium.shared.active { paywall = true; return }
+    let remaining = max(1, Self.daily - store.todayCount)
+    let due = openingReview.due(account: app.account?.id ?? "local")
+    if !due.isEmpty {
+      openingRoutes = Array(due.prefix(remaining)).map(\.route)
+      showOpeningDaily = true
+      return
+    }
+    preparing = true
+    Task { let s = await todaySession(); preparing = false; if !s.items.isEmpty { session = s } else { loadError = String(localized: "題目載入失敗，檢查網路後再試一次") } }
+  }
 
   /// 今天：目標 10 題、本週重點、繼續練（到期的複習＋重點主題的新題目）
   private var todayCard: some View {
@@ -145,19 +186,18 @@ struct PracticeView: View {
         }
         .frame(width: 64, height: 64)
         VStack(alignment: .leading, spacing: 4) {
-          Text(done >= goal ? "今天的練習完成了" : "今天的練習").font(.headline)
+          Text(done >= goal ? String(localized: "今天的練習完成了") : String(localized: "今天的練習")).font(.headline)
           if let f = PuzzleBank.focusLabel { Label("本週重點：\(f)", systemImage: "scope").font(.subheadline).foregroundStyle(Brand.orange) }
-          Text("\(store.dueCards.count) 題複習到期・\(done) 題已完成").font(.caption).foregroundStyle(.secondary)
+          Text("\(store.dueCards.count + openingDue) 題複習到期・\(done) 題已完成").font(.caption).foregroundStyle(.secondary)
         }
         Spacer(minLength: 0)
       }
       Button {
-        preparing = true
-        Task { let s = await todaySession(); preparing = false; if !s.items.isEmpty { session = s } else { loadError = "題目載入失敗，檢查網路後再試一次" } }
+        startToday()
       } label: {
         HStack {
           if preparing { ProgressView().tint(.white) } else { Image(systemName: "play.fill") }
-          Text(done >= goal ? "再練一組" : done > 0 ? "繼續練" : "開始今天的練習")
+          Text(done >= goal ? String(localized: "再練一組") : done > 0 ? String(localized: "繼續練") : String(localized: "開始今天的練習"))
         }
         .font(.headline).frame(maxWidth: .infinity, minHeight: 48)
       }
@@ -178,10 +218,10 @@ struct PracticeView: View {
       }
       ProgressView(value: Double(p.done), total: Double(max(p.total, 1))).tint(p.total > 0 && p.done >= p.total ? .green : Brand.orange)
       HStack(spacing: 0) {
-        poolStat("今天待練", store.dueCards.count, Brand.orange)
-        poolStat("複習中", store.waiting.count, Brand.ink)
-        poolStat("已熟練", store.masteredCards.count, Color(hex: 0x15803D))
-        poolStat("未開始", store.unstarted.count, .secondary)
+        poolStat(String(localized: "今天待練"), store.dueCards.count, Brand.orange)
+        poolStat(String(localized: "複習中"), store.waiting.count, Brand.ink)
+        poolStat(String(localized: "已熟練"), store.masteredCards.count, Color(hex: 0x15803D))
+        poolStat(String(localized: "未開始"), store.unstarted.count, .secondary)
       }
     }
     .padding(.vertical, 4)
@@ -202,16 +242,25 @@ struct PracticeView: View {
 
   /// 今天的一組：到期的複習題先，不滿 10 題就補本週重點的新題目；做完還可以再來一組
   private func todaySession() async -> Session {
-    var items = store.session(size: Self.daily).map(PuzzleItem.init(card:))
+    let size = store.todayCount >= Self.daily ? Self.daily : max(1, Self.daily - store.todayCount)
+    var items = store.session(size: size).map(PuzzleItem.init(card:))
     let rating = app.games.first?.myRating, platform = app.account?.platform ?? .chesscom
     let theme = PuzzleBank.focus ?? PuzzleBank.themes[0]
-    if items.count < Self.daily { items += await PuzzleBank.fetch(theme, rating: rating, platform: platform, n: Self.daily - items.count) }
-    return Session(title: "今天的練習", items: items) { await PuzzleBank.fetch(theme, rating: rating, platform: platform, n: Self.daily) }
+    if items.count < size { items += await PuzzleBank.fetch(theme, rating: rating, platform: platform, n: size - items.count) }
+    return Session(title: String(localized: "今天的練習"), items: items) { await PuzzleBank.fetch(theme, rating: rating, platform: platform, n: Self.daily) }
   }
 
   var body: some View {
     List {
       Section { todayCard }
+      Section {
+        NavigationLink { OpeningPracticeView() } label: {
+          Label { VStack(alignment: .leading, spacing: 3) {
+            Text("開局練習").font(.headline)
+            Text("看自己的開局、探索變化，再自己走一遍").font(.caption).foregroundStyle(.secondary)
+          } } icon: { Image(systemName: "square.grid.3x3.fill").foregroundStyle(Brand.orange) }
+        }
+      }
       Section {
         NavigationLink { ReviewPoolView() } label: { poolCard }
       } header: {
@@ -222,15 +271,16 @@ struct PracticeView: View {
       Section { StreakCard(store: store) }
       Section { WeeklyCard(store: store) }
       Section {
-        let due = store.dueCards.count
+        let due = store.dueCards.count + openingDue
         Button {
-          session = Session(title: "今日複習", items: store.session().map(PuzzleItem.init(card:)))
+          if openingDue > 0 { startToday() }
+          else { session = Session(title: String(localized: "今日複習"), items: store.session().map(PuzzleItem.init(card:))) }
         } label: {
           HStack {
             Image(systemName: due > 0 ? "play.circle.fill" : "checkmark.circle.fill").font(.title2)
             VStack(alignment: .leading, spacing: 2) {
-              Text(due > 0 ? "開始今日複習" : store.cards.isEmpty ? "還沒有複習題" : "今天的複習完成了").font(.headline)
-              Text(due > 0 ? "\(min(due, Self.daily)) 題到期，大約 \(max(1, min(due, Self.daily) / 2)) 分鐘" : store.cards.isEmpty ? "分析完一局，你錯過的好機會就會變成複習題" : "做一組主題練習，維持手感")
+              Text(due > 0 ? String(localized: "開始今日複習") : store.cards.isEmpty ? String(localized: "還沒有複習題") : String(localized: "今天的複習完成了")).font(.headline)
+              Text(due > 0 ? String(localized: "\(min(due, Self.daily)) 題到期，大約 \(max(1, min(due, Self.daily) / 2)) 分鐘") : store.cards.isEmpty ? String(localized: "分析完一局，你錯過的好機會就會變成複習題") : String(localized: "做一組主題練習，維持手感"))
                 .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
@@ -242,10 +292,10 @@ struct PracticeView: View {
       if !store.cards.isEmpty {
         Section {
           ForEach(ReviewCard.Kind.allCases, id: \.self) { k in
-            let cs = store.cards.filter { $0.kinds.contains(k) && !$0.mastered }
+            let cs = store.dueCards.filter { $0.kinds.contains(k) }
             if !cs.isEmpty {
               Button {
-                let items = cs.sorted { $0.due < $1.due }.prefix(Self.daily).map(PuzzleItem.init(card:))
+                let items = store.session(size: Self.daily, kind: k).map(PuzzleItem.init(card:))
                 session = Session(title: k.zh, items: Array(items))
               } label: {
                 HStack {
@@ -259,7 +309,7 @@ struct PracticeView: View {
         } header: {
           Text("我的失誤")
         } footer: {
-          Text("共 \(store.cards.count) 張，學會 \(store.masteredCount) 張（連續答對 \(ReviewStore.graduate) 次）。答對的隔 1 天、3 天，之後越來越久才再出。")
+          Text("共 \(store.cards.count) 張，學會 \(store.masteredCount) 張（連續答對 \(ReviewStore.graduate) 次）。練過至少隔 3 天再出，答對後隔 3 天、7 天，之後越來越久才再出。")
         }
       }
       Section("主題練習") {
@@ -270,7 +320,7 @@ struct PracticeView: View {
               let rating = app.games.first?.myRating, platform = app.account?.platform ?? .chesscom
               let items = await PuzzleBank.fetch(t, rating: rating, platform: platform)
               loadingTheme = nil
-              if items.isEmpty { loadError = "題目載入失敗，檢查網路後再試一次" }
+              if items.isEmpty { loadError = String(localized: "題目載入失敗，檢查網路後再試一次") }
               else { session = Session(title: t.name, items: items) { await PuzzleBank.fetch(t, rating: rating, platform: platform) } }
             }
           } label: {
@@ -301,6 +351,19 @@ struct PracticeView: View {
       }
     }
     .navigationTitle("練習")
+    .fullScreenCover(isPresented: $showOpeningDaily, onDismiss: {
+      openingRoutes = []
+      guard continueAfterOpenings, store.todayCount < Self.daily else { continueAfterOpenings = false; return }
+      continueAfterOpenings = false
+      preparing = true
+      Task {
+        let next = await todaySession(); preparing = false
+        if !next.items.isEmpty { session = next }
+        else { loadError = String(localized: "題目載入失敗，檢查網路後再試一次") }
+      }
+    }) { OpeningDailyView(routes: openingRoutes) { finished in continueAfterOpenings = finished; showOpeningDaily = false } }
+    .sheet(isPresented: $paywall) { PaywallView(from: "practice") }
+    .onChange(of: app.startPractice, initial: true) { _, go in if go { app.startPractice = false; startToday() } }
     #if DEBUG
     // 開發用：-demoPuzzle <主題> 直接開一組主題練習
     .task {
@@ -329,7 +392,7 @@ struct StreakCard: View {
         Text("\(store.streak)").font(.system(size: 34, weight: .bold, design: .rounded)).monospacedDigit()
         Text("天連續練習").font(.subheadline).foregroundStyle(.secondary)
         Spacer()
-        Text(store.practicedToday ? "今天做了 \(store.todayCount) 題" : "今天還沒練").font(.caption)
+        Text(store.practicedToday ? String(localized: "今天做了 \(store.todayCount) 題") : String(localized: "今天還沒練")).font(.caption)
           .foregroundStyle(store.practicedToday ? .green : Brand.orange)
       }
       let today = Day.number()
@@ -338,7 +401,7 @@ struct StreakCard: View {
       let start = today - weekday - 28
       VStack(spacing: 4) {
         HStack(spacing: 4) {
-          ForEach(["日", "一", "二", "三", "四", "五", "六"], id: \.self) { Text($0).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity) }
+          ForEach(Array([String(localized: "日"), String(localized: "一"), String(localized: "二"), String(localized: "三"), String(localized: "四"), String(localized: "五"), String(localized: "六")].enumerated()), id: \.offset) { Text($0.element).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity) }
         }
         ForEach(0..<5, id: \.self) { w in
           HStack(spacing: 4) {
@@ -349,7 +412,7 @@ struct StreakCard: View {
                 .fill(n > today ? Color.clear : done ? Brand.orange : Color(.secondarySystemFill))
                 .overlay(RoundedRectangle(cornerRadius: 4).stroke(n == today ? Brand.orange : .clear, lineWidth: 1.5))
                 .frame(maxWidth: .infinity).frame(height: 22)
-                .accessibilityLabel(done ? "有練習" : "沒練習")
+                .accessibilityLabel(done ? String(localized: "有練習") : String(localized: "沒練習"))
             }
           }
         }
@@ -386,6 +449,7 @@ struct PuzzleSessionView: View {
   @State private var results: [Bool?] = []
   @State private var burst = false
   @State private var loadingMore = false
+  @State private var noMore = false
   @State private var last: (from: String, to: String)?
   /// 這一次作答的編號：引擎檢查、對手自動走都是非同步的，回來時題目已經換了（跳過、下一題、再試一次）就丟掉，
   /// 不然上一題的檢查結果會記到這一題，照答案走也算沒答對
@@ -393,8 +457,6 @@ struct PuzzleSessionView: View {
   @State private var revisit: GameSummary?
   /// 對手剛走的那一步（題目開頭先走給你看）
   @State private var oppMove: String?
-  /// 沒走到的題，隔幾題再出一次
-  static let againAfter = 3
 
   enum Phase { case thinking, solved, failed, finished }
 
@@ -487,7 +549,7 @@ struct PuzzleSessionView: View {
             HStack(alignment: .top, spacing: 10) {
               Image(wrongs == 0 ? "coach-think" : "coach-sad").resizable().scaledToFit().frame(width: 48, height: 48)
               VStack(alignment: .leading, spacing: 3) {
-                Text(wrongs == 0 ? "\(lead.title)找出最好的一步（\(mySide == .white ? "白" : "黑")方）" : "不是這步，再想想")
+                Text(wrongs == 0 ? String(localized: "\(lead.title)找出最好的一步（\(mySide == .white ? String(localized: "白方") : String(localized: "黑方"))）") : String(localized: "不是這步，再想想"))
                   .font(.subheadline.weight(.semibold)).foregroundStyle(wrongs == 0 ? Brand.ink : Brand.orange)
                 if wrongs == 0, let m = oppMove { Text("對手剛走了 \(m)").font(.caption.weight(.semibold)).foregroundStyle(Brand.ink) }
                 if wrongs == 0, let d = lead.detail { Text(d).font(.caption).foregroundStyle(Brand.ink.opacity(0.75)) }
@@ -505,7 +567,7 @@ struct PuzzleSessionView: View {
         }
 
       case .solved, .failed:
-        Label(alsoGood != nil ? "這步也可以！" : showAnswer ? "完成了！" : "答對了！", systemImage: "checkmark.seal.fill")
+        Label(alsoGood != nil ? String(localized: "這步也可以！") : showAnswer ? String(localized: "完成了！") : String(localized: "答對了！"), systemImage: "checkmark.seal.fill")
           .font(.title3.bold()).foregroundStyle(state == .solved ? .green : Brand.orange)
         if let a = alsoGood { Text("引擎最推薦的是 \(a)，你走的一樣好。").font(.subheadline).foregroundStyle(.secondary) }
         if !item.why.isEmpty {
@@ -514,7 +576,6 @@ struct PuzzleSessionView: View {
           }
           .frame(maxWidth: .infinity, alignment: .leading)
         } else if let h = item.headline { Text("當時的問題：\(h)").font(.subheadline).foregroundStyle(.secondary) }
-        if showAnswer, item.cardId != nil, !item.again { Text("過 \(Self.againAfter) 題再走一次這題，讓它更熟").font(.caption).foregroundStyle(.secondary) }
         if let id = item.gameId, let g = app?.games.first(where: { $0.id == id }) {
           Button { revisit = g } label: { Label("回到這局看看", systemImage: "arrow.uturn.backward.circle") }.font(.subheadline)
         }
@@ -523,7 +584,7 @@ struct PuzzleSessionView: View {
             Button { load() } label: { Label("再試一次", systemImage: "arrow.counterclockwise").font(.headline).frame(maxWidth: .infinity, minHeight: 46) }
               .buttonStyle(.bordered).tint(Brand.orange)
           }
-          Button { next() } label: { Text(index + 1 < items.count ? "下一題" : "完成").font(.headline).frame(maxWidth: .infinity, minHeight: 46) }
+          Button { next() } label: { Text(index + 1 < items.count ? String(localized: "下一題") : String(localized: "完成")).font(.headline).frame(maxWidth: .infinity, minHeight: 46) }
             .buttonStyle(.borderedProminent).tint(state == .solved ? .green : Brand.orange)
         }
       case .finished:
@@ -551,21 +612,23 @@ struct PuzzleSessionView: View {
           .buttonStyle(.bordered).padding(.top, 8)
       }
       Spacer()
+      if noMore { Text("目前沒有可用的新題，練過的題目至少隔 3 天再出").font(.caption).foregroundStyle(.secondary) }
       if let more {
         Button {
           loadingMore = true
           Task {
             let next = await more()
             loadingMore = false
-            guard !next.isEmpty else { return }
+            guard !next.isEmpty else { noMore = true; return }
+            noMore = false
             items = next; index = 0; correct = 0; results = []; load()
           }
         } label: {
-          Label(loadingMore ? "準備新題目…" : "再來一組", systemImage: "arrow.clockwise").font(.headline).frame(maxWidth: .infinity, minHeight: 50)
+          Label(loadingMore ? String(localized: "準備新題目…") : String(localized: "再來一組"), systemImage: "arrow.clockwise").font(.headline).frame(maxWidth: .infinity, minHeight: 50)
         }
         .buttonStyle(.borderedProminent).tint(Brand.orange).disabled(loadingMore)
       }
-      Button { Notifier.reschedule(); dismiss() } label: { Text(more == nil ? "好" : "今天先到這裡").font(.headline).frame(maxWidth: .infinity, minHeight: 50) }
+      Button { Notifier.reschedule(); dismiss() } label: { Text(more == nil ? String(localized: "好") : String(localized: "今天先到這裡")).font(.headline).frame(maxWidth: .infinity, minHeight: 50) }
         .buttonStyle(.bordered).tint(Brand.ink)
     }
   }
@@ -674,9 +737,8 @@ struct PuzzleSessionView: View {
     if first {
       if recall != .shown { correct += 1 }
       setResult(recall != .shown)
-      if let id = item?.id, item?.cardId == nil { PuzzleBank.seen.insert(id) }
-      if let id = item?.cardId, item?.again == false { ReviewStore.shared.answer(id, recall: recall) } else { ReviewStore.shared.markPracticed() }
-      if recall == .shown { requeue() }
+      if let id = item?.id, item?.cardId == nil { PuzzleBank.recordSeen(id) }
+      if let id = item?.cardId { ReviewStore.shared.answer(id, recall: recall) } else { ReviewStore.shared.markPracticed() }
     }
     Haptics.bump()
     state = .solved
@@ -690,16 +752,9 @@ struct PuzzleSessionView: View {
   private func skip() {
     let first = results[safe: index] == nil
     setResult(false)
-    if first, let id = item?.cardId, item?.again == false { ReviewStore.shared.answer(id, ok: false); requeue() }
+    if first, let id = item?.cardId { ReviewStore.shared.answer(id, ok: false) }
+    if first, let id = item?.id, item?.cardId == nil { PuzzleBank.recordSeen(id) }
     next()
-  }
-
-  /// 複習題沒走到：這一輪隔幾題再出一次（跟 Anki 的「重新學習」一樣，趁還記得再走一遍）
-  private func requeue() {
-    guard var again = item, again.cardId != nil, !again.again else { return }
-    again.again = true
-    again.subtitle = "剛剛這題再走一次"
-    items.insert(again, at: min(index + 1 + Self.againAfter, items.count))
   }
 
   private func next() {
@@ -716,6 +771,7 @@ struct EndgamePlayView: View {
   @State private var myMoves = 0
   @State private var thinking = false
   @State private var result: String?
+  @State private var passed = false
   @State private var last: (from: String, to: String)?
   /// 開始時引擎看幾步能將死（讓人知道大概還要幾步，不會覺得永無止境）
   @State private var mateIn: Int?
@@ -726,9 +782,9 @@ struct EndgamePlayView: View {
   }
 
   private var progressText: String {
-    if let l = basic.limit { return "守住 \(l) 步：已經 \(myMoves) 步" }
-    if let m = mateIn { return "引擎看是 \(m) 步殺・你已經走了 \(myMoves) 步" }
-    return "已經走了 \(myMoves) 步"
+    if let l = basic.limit { return String(localized: "守住 \(l) 步：已經 \(myMoves) 步") }
+    if let m = mateIn { return String(localized: "引擎看是 \(m) 步殺・你已經走了 \(myMoves) 步") }
+    return String(localized: "已經走了 \(myMoves) 步")
   }
 
   var body: some View {
@@ -739,7 +795,7 @@ struct EndgamePlayView: View {
                 onMove: { play($0, $1) })
       HStack {
         if thinking { ProgressView().controlSize(.small); Text("引擎思考中…").font(.caption).foregroundStyle(.secondary) }
-        else if let r = result { Text(r).font(.headline).foregroundStyle(r.hasPrefix("過關") ? .green : Brand.orange) }
+        else if let r = result { Text(r).font(.headline).foregroundStyle(passed ? .green : Brand.orange) }
         else { Text(progressText).font(.subheadline).monospacedDigit() }
         Spacer()
         Button { restart() } label: { Label("重來", systemImage: "arrow.counterclockwise") }
@@ -753,7 +809,7 @@ struct EndgamePlayView: View {
     .toolbar { ToolbarItem(placement: .topBarTrailing) { SoundToggle() } }
     .toolbar(.hidden, for: .tabBar)
     .overlay {
-      if let r = result, r.hasPrefix("過關") { SuccessBurst(text: r) { restart() } }
+      if let r = result, passed { SuccessBurst(text: r) { restart() } }
     }
     .task {
       guard basic.limit == nil else { return }
@@ -763,7 +819,7 @@ struct EndgamePlayView: View {
   }
 
   private func restart() {
-    fen = basic.fen; myMoves = 0; result = nil; last = nil
+    fen = basic.fen; myMoves = 0; result = nil; passed = false; last = nil
     if FEN.sideToMove(fen) != basic.side { reply() }
   }
 
@@ -773,7 +829,7 @@ struct EndgamePlayView: View {
     apply(p)
     myMoves += 1
     if check(p) { return }
-    if let l = basic.limit, myMoves >= l { done("過關！守住了 \(l) 步") ; return }
+    if let l = basic.limit, myMoves >= l { done(String(localized: "過關！守住了 \(l) 步"), passed: true); return }
     reply()
   }
 
@@ -798,16 +854,17 @@ struct EndgamePlayView: View {
   /// 局面結束了嗎：將死、逼和、只剩王（子力不足）
   private func check(_ p: Ply) -> Bool {
     let mine = p.mover == basic.side
-    if p.isCheckmate { done(mine ? "過關！將死了" : "被將死了，再試一次"); return true }
-    if !FEN.hasMoves(p.fenAfter) { done(basic.limit != nil ? "過關！逼和了" : "逼和了：要留給對方的王走的格子"); return true }
+    if p.isCheckmate { done(mine ? String(localized: "過關！將死了") : String(localized: "被將死了，再試一次"), passed: mine); return true }
+    if !FEN.hasMoves(p.fenAfter) { done(basic.limit != nil ? String(localized: "過關！逼和了") : String(localized: "逼和了：要留給對方的王走的格子"), passed: basic.limit != nil); return true }
     let rest = FEN.pieces(p.fenAfter).values.filter { $0.last != "K" }
-    if rest.isEmpty { done(basic.limit != nil ? "過關！守和了" : "子都換光了，再試一次"); return true }
+    if rest.isEmpty { done(basic.limit != nil ? String(localized: "過關！守和了") : String(localized: "子都換光了，再試一次"), passed: basic.limit != nil); return true }
     return false
   }
 
-  private func done(_ r: String) {
+  private func done(_ r: String, passed ok: Bool = false) {
     result = r
-    if r.hasPrefix("過關") { ReviewStore.shared.markPracticed(); Haptics.bump() }
+    passed = ok
+    if ok { ReviewStore.shared.markPracticed(); Haptics.bump() }
   }
 }
 

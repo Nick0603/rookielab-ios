@@ -1,7 +1,8 @@
 import { pick } from '@/lib/i18n/lang';
+import { genderOf, mkT } from '../i18n/gen';
 import { Chess, type Color, type Move, type Square } from 'chess.js';
 import type { Lang } from '../i18n/lang';
-import { label, lineTactics, opp, pieceName, VALUE, withTurn, type PieceRef } from './tactics';
+import { label, lineTactics, opp, pieceName, pieceNameDef, VALUE, withTurn, type PieceRef } from './tactics';
 
 /**
  * 一步棋走完之後，剛走的那個子跟誰有攻守關係。
@@ -181,29 +182,40 @@ export function moveRelations(fenBefore: string, san: string): Relations {
   };
 }
 
+/** 「knight on e5 pinned to the king on e8」：被牽制的子（連同它後面的子） */
+function pinText(p: Pin, lang: Lang): string {
+  const n = (r: PieceRef) => pieceName(r, lang);
+  if (lang === 'zh') return `${n(p.pinnedPiece)}被牽制在 ${n(p.behindPiece)}前面`;
+  if (lang === 'es' || lang === 'pt') {
+    const a = genderOf(lang, p.pinnedPiece.type) === 'f' ? 'a' : 'o';
+    return lang === 'es'
+      ? `${n(p.pinnedPiece)} clavad${a} contra ${pieceNameDef(p.behindPiece, lang)}`
+      : `${n(p.pinnedPiece)} cravad${a} contra ${pieceNameDef(p.behindPiece, lang)}`;
+  }
+  return `${n(p.pinnedPiece)} pinned to the ${n(p.behindPiece)}`;
+}
+
 /** 分成四類，給固定版面用：每一類一格，沒有就是空字串 */
 /** 「…b5 攻擊 c4 象」／「Qxf7# 將死」 */
 export function threatText(t: Threat, lang: Lang = 'zh'): string {
-  const en = lang !== 'zh';
+  const x = mkT(lang);
   const mv = `${t.side === 'b' ? '…' : ''}${t.san}`;
-  if (t.kind === 'mate') return en ? `${mv} mates` : `${mv} 將死`;
+  if (t.kind === 'mate') return x(`${mv} 將死`, `${mv} mates`, `${mv} da mate`, `${mv} dá mate`);
   if (t.kind === 'plan') return t.note ? `${mv}${pick(lang, '：', ': ')}${t.note}` : mv;
   const n = t.target ? pieceName(t.target, lang) : '';
-  if (t.kind === 'win') return en ? `${mv} wins the ${n}` : `${mv} 吃掉 ${n}`;
-  return en ? `${mv} attacks the ${n}` : `${mv} 攻擊 ${n}`;
+  const nd = t.target ? pieceNameDef(t.target, lang) : '';
+  if (t.kind === 'win') return x(`${mv} 吃掉 ${n}`, `${mv} wins the ${n}`, `${mv} gana ${nd}`, `${mv} ganha ${nd}`);
+  return x(`${mv} 攻擊 ${n}`, `${mv} attacks the ${n}`, `${mv} ataca ${nd}`, `${mv} ataca ${nd}`);
 }
 
 export function relationsParts(r: Relations, lang: Lang = 'zh'): Record<'attacks' | 'defends' | 'attackedBy' | 'pins' | 'threats', string> {
   const n = (p: PieceRef) => pieceName(p, lang);
-  const en = lang !== 'zh';
   const sep = pick(lang, '、', ', ');
   return {
     attacks: r.attacks.map((l) => n(l.target)).join(sep),
     defends: r.defends.map((l) => n(l.target)).join(sep),
     attackedBy: r.attackedBy.map((l) => n(l.by)).join(sep),
-    pins: r.pins.map((p) => (en
-      ? `${n(p.pinnedPiece)} pinned to the ${n(p.behindPiece)}`
-      : `${n(p.pinnedPiece)}被牽制在 ${n(p.behindPiece)}前面`)).join(sep),
+    pins: r.pins.map((p) => pinText(p, lang)).join(sep),
     threats: r.threats.map((t) => threatText(t, lang)).join(sep),
   };
 }
@@ -211,16 +223,13 @@ export function relationsParts(r: Relations, lang: Lang = 'zh'): Record<'attacks
 /** 給棋盤下方的一行說明，例：「攻擊：e5 兵｜保護：e4 兵」／「Attacks: pawn on e5 | Protects: pawn on e4」 */
 export function relationsText(r: Relations, lang: Lang = 'zh'): string {
   const n = (p: PieceRef) => pieceName(p, lang);
-  const en = lang !== 'zh';
+  const x = mkT(lang);
+  const sep = pick(lang, '、', ', ');
   const parts: string[] = [];
-  if (r.attacks.length) parts.push(`${pick(lang, '攻擊：', 'Attacks: ')}${r.attacks.map((l) => n(l.target)).join(pick(lang, '、', ', '))}`);
-  if (r.defends.length) parts.push(`${pick(lang, '保護：', 'Protects: ')}${r.defends.map((l) => n(l.target)).join(pick(lang, '、', ', '))}`);
-  if (r.attackedBy.length) parts.push(`${pick(lang, '被攻擊：來自 ', 'Attacked by: ')}${r.attackedBy.map((l) => n(l.by)).join(pick(lang, '、', ', '))}`);
-  if (r.pins.length) {
-    parts.push(`${pick(lang, '牽制：', 'Pins: ')}${r.pins.map((p) => (en
-      ? `${n(p.pinnedPiece)} pinned to the ${n(p.behindPiece)}`
-      : `${n(p.pinnedPiece)}被牽制在 ${n(p.behindPiece)}前面`)).join(pick(lang, '、', ', '))}`);
-  }
-  if (r.threats.length) parts.push(`${pick(lang, '準備：', 'Prepares: ')}${r.threats.map((t) => threatText(t, lang)).join(pick(lang, '、', ', '))}`);
+  if (r.attacks.length) parts.push(`${x('攻擊：', 'Attacks: ', 'Ataca: ', 'Ataca: ')}${r.attacks.map((l) => n(l.target)).join(sep)}`);
+  if (r.defends.length) parts.push(`${x('保護：', 'Protects: ', 'Protege: ', 'Protege: ')}${r.defends.map((l) => n(l.target)).join(sep)}`);
+  if (r.attackedBy.length) parts.push(`${x('被攻擊：來自 ', 'Attacked by: ', 'Atacada por: ', 'Atacada por: ')}${r.attackedBy.map((l) => n(l.by)).join(sep)}`);
+  if (r.pins.length) parts.push(`${x('牽制：', 'Pins: ', 'Clavadas: ', 'Cravadas: ')}${r.pins.map((p) => pinText(p, lang)).join(sep)}`);
+  if (r.threats.length) parts.push(`${x('準備：', 'Prepares: ', 'Prepara: ', 'Prepara: ')}${r.threats.map((t) => threatText(t, lang)).join(sep)}`);
   return parts.join(pick(lang, '｜', ' | '));
 }

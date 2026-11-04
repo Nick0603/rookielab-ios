@@ -11,7 +11,16 @@ struct GameType: Hashable, Identifiable {
   var short: String? { GameType.short(key) }
 
   static let defaultKey = "rapid:600+0"
-  static let timeClassZh = ["rapid": "快棋", "blitz": "閃電棋", "bullet": "子彈棋", "daily": "每日棋", "classical": "慢棋"]
+  static func timeClassName(_ tc: String) -> String {
+    switch tc {
+    case "rapid": String(localized: "快棋")
+    case "blitz": String(localized: "閃電棋")
+    case "bullet": String(localized: "子彈棋")
+    case "daily": String(localized: "每日棋")
+    case "classical": String(localized: "慢棋")
+    default: tc
+    }
+  }
 
   static func key(_ g: GameSummary) -> String {
     let tc = g.timeClass
@@ -31,12 +40,12 @@ struct GameType: Hashable, Identifiable {
 
   static func label(_ key: String) -> String {
     let tc = String(key.split(separator: ":").first ?? "")
-    let name = timeClassZh[tc] ?? tc
+    let name = timeClassName(tc)
     guard let c = clock(key) else { return name }
     let minutes = Double(c.base) / 60
     let m = minutes == minutes.rounded() ? "\(Int(minutes))" : String(format: "%.1f", minutes)
-    if c.inc > 0 { return c.base < 60 ? "\(c.base) 秒+\(c.inc) \(name)" : "\(m)+\(c.inc) \(name)" }
-    return c.base < 60 ? "\(c.base) 秒\(name)" : "\(m) 分鐘\(name)"
+    if c.inc > 0 { return c.base < 60 ? String(localized: "\(c.base) 秒+\(c.inc) \(name)") : "\(m)+\(c.inc) \(name)" }
+    return c.base < 60 ? String(localized: "\(c.base) 秒\(name)") : String(localized: "\(m) 分鐘\(name)")
   }
 
   static func short(_ key: String) -> String? {
@@ -82,16 +91,17 @@ enum Openings {
   }
 
   static func name(_ raw: String?) -> String {
-    guard let raw, !raw.isEmpty else { return "未知開局" }
+    guard let raw, !raw.isEmpty else { return String(localized: "未知開局") }
+    guard AppLang.isZh else { return raw }
     let k = norm(raw)
     return longestFirst.first { k.contains($0.0) }?.1 ?? raw
   }
 
   /// 開局家族（統計分組用）：西西里防禦的各種變化都歸到「西西里防禦」
   static func family(_ raw: String?) -> String {
-    guard let raw, !raw.isEmpty else { return "未知開局" }
+    guard let raw, !raw.isEmpty else { return String(localized: "未知開局") }
     let k = norm(raw)
-    if let hit = shortestFirst.first(where: { k.contains($0.0) }) {
+    if AppLang.isZh, let hit = shortestFirst.first(where: { k.contains($0.0) }) {
       return String(hit.1.components(separatedBy: " — ").first ?? hit.1)
     }
     // 沒有譯名：保留原名，去掉後面附的走法（"... 2.Nf3"）與 Variation 之後的細節

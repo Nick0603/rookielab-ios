@@ -4,26 +4,26 @@ import Foundation
 /// 有網站解說（關鍵步）就用解說的標題（戰術名稱最準）；其他步照走法本身判斷，都在播放前算好
 enum MoveTags {
   private static let value: [String: Int] = ["P": 1, "N": 3, "B": 3, "R": 5, "Q": 9, "K": 100]
-  private static let zh: [String: String] = ["P": "兵", "N": "馬", "B": "象", "R": "車", "Q": "后", "K": "王"]
+  private static func piece(_ code: String) -> String { Explain.pieceName(code.lowercased()) }
 
   static func tag(_ p: Ply, explanation e: ExplainJS.Explanation?) -> String {
     // 解說的標題：戰術名稱、送子、漏看威脅…（太籠統的「好棋」「局面變差」不用）
-    if let h = e?.headline, !["好棋", "局面變差"].contains(h) { return h }
-    if p.isCheckmate { return "將殺" }
+    if let h = e?.headline, !["好棋", "局面變差", "Strong move", "Position got worse", "Jugada fuerte", "La posición empeoró", "Lance forte", "A posição piorou"].contains(h) { return h }
+    if p.isCheckmate { return String(localized: "將殺") }
     let before = FEN.pieces(p.fenBefore), after = FEN.pieces(p.fenAfter)
-    guard let code = before[p.from] else { return "調整位置" }
+    guard let code = before[p.from] else { return String(localized: "調整位置") }
     let me = String(code.prefix(1)), kind = String(code.suffix(1))
     let opp = me == "w" ? "b" : "w"
     if kind == "K" && abs(Int(p.from.unicodeScalars.first!.value) - Int(p.to.unicodeScalars.first!.value)) == 2 {
-      return p.to.hasPrefix("g") ? "入堡（短）" : "入堡（長）"
+      return p.to.hasPrefix("g") ? String(localized: "入堡（短）") : String(localized: "入堡（長）")
     }
-    if p.uci.count == 5 { return "升變" }
-    if p.san.contains("+") { return p.captured != nil ? "吃子帶將軍" : "將軍" }
+    if p.uci.count == 5 { return String(localized: "升變") }
+    if p.san.contains("+") { return p.captured != nil ? String(localized: "吃子帶將軍") : String(localized: "將軍") }
     if let c = p.captured?.uppercased() {
       let got = value[c] ?? 0, mine = value[kind] ?? 0
       let defended = attacked(p.fenAfter, p.to, by: opp)
-      if got > mine || !defended { return "得子：吃\(zh[c] ?? "子")" }
-      return got == mine ? "兌子" : "吃\(zh[c] ?? "子")"
+      if got > mine || !defended { return String(localized: "得子：吃\(piece(c))") }
+      return got == mine ? String(localized: "兌子") : String(localized: "吃\(piece(c))")
     }
     // 你的子被攻擊的總值：走完變少就是防守；被攻擊的那顆走開就是躲開攻擊
     let threatened = { (fen: String) -> [String] in
@@ -31,20 +31,20 @@ enum MoveTags {
     }
     let hitBefore = threatened(withSide(p.fenBefore, opp))
     let hitAfter = threatened(p.fenAfter)
-    if hitBefore.contains(p.from) && !hitAfter.contains(p.to) { return "躲開攻擊：\(zh[kind] ?? "")走開" }
+    if hitBefore.contains(p.from) && !hitAfter.contains(p.to) { return String(localized: "躲開攻擊：\(piece(kind))走開") }
     let worth = { (sqs: [String], pos: [String: String]) in sqs.reduce(0) { $0 + (value[String(pos[$1]?.suffix(1) ?? "")] ?? 0) } }
-    if worth(hitAfter, after) < worth(hitBefore, before) { return "防守" }
+    if worth(hitAfter, after) < worth(hitBefore, before) { return String(localized: "防守") }
     // 走完攻擊對手比自己大的子
     let targets = FEN.targets(fen: withSide(p.fenAfter, me == "w" ? .white : .black), from: p.to)
     if let big = targets.compactMap({ after[$0] }).filter({ $0.hasPrefix(opp) && (value[String($0.suffix(1))] ?? 0) > (value[kind] ?? 0) && $0.suffix(1) != "K" }).first {
-      return "攻擊對手的\(zh[String(big.suffix(1))] ?? "子")"
+      return String(localized: "攻擊對手的\(piece(String(big.suffix(1))))")
     }
     if p.moveNumber <= 12 {
-      if ["N", "B"].contains(kind), p.from.hasSuffix(me == "w" ? "1" : "8") { return "出子" }
-      if kind == "P", ["d4", "e4", "d5", "e5", "c4", "c5"].contains(p.to) { return "佔中央" }
+      if ["N", "B"].contains(kind), p.from.hasSuffix(me == "w" ? "1" : "8") { return String(localized: "出子") }
+      if kind == "P", ["d4", "e4", "d5", "e5", "c4", "c5"].contains(p.to) { return String(localized: "佔中央") }
     }
-    if kind == "P", Grading.phase(moveNumber: p.moveNumber, fen: p.fenBefore) == .endgame { return "推兵" }
-    return "調整位置"
+    if kind == "P", Grading.phase(moveNumber: p.moveNumber, fen: p.fenBefore) == .endgame { return String(localized: "推兵") }
+    return String(localized: "調整位置")
   }
 
   // MARK: 小工具

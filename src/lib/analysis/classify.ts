@@ -146,5 +146,25 @@ export const BLUNDER_LABEL_EN: Record<BlunderType, string> = {
   positional: 'Positional error',
 };
 
+export const BLUNDER_LABEL_ES: Record<BlunderType, string> = {
+  hanging: 'Pieza regalada',
+  bad_exchange: 'Mal cambio',
+  missed_threat: 'Amenaza del rival sin ver',
+  missed_free: 'Pieza gratis sin capturar',
+  missed_mate: 'Mate perdido',
+  allowed_mate: 'Cayó en un mate',
+  positional: 'Error posicional',
+};
+
+export const BLUNDER_LABEL_PT: Record<BlunderType, string> = {
+  hanging: 'Peça largada',
+  bad_exchange: 'Troca ruim',
+  missed_threat: 'Ameaça do adversário não vista',
+  missed_free: 'Peça de graça não capturada',
+  missed_mate: 'Mate perdido',
+  allowed_mate: 'Caiu em um mate',
+  positional: 'Erro posicional',
+};
+
 export const blunderLabel = (t: BlunderType, lang: Lang = 'zh') =>
-  (lang !== 'zh' ? BLUNDER_LABEL_EN : BLUNDER_LABEL_ZH)[t];
+  (lang === 'es' ? BLUNDER_LABEL_ES : lang === 'pt' ? BLUNDER_LABEL_PT : lang !== 'zh' ? BLUNDER_LABEL_EN : BLUNDER_LABEL_ZH)[t];

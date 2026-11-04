@@ -1,18 +1,18 @@
 import Foundation
 import Observation
 
-/// 複習卡：自己對局裡走錯的局面，答案是引擎的正解。排程規則跟網站 src/lib/review.ts 一樣（Anki）：
-/// 答對間隔 1 天 → 3 天 → 之後乘上難度係數（起始 2.5）；答錯連續答對歸零、係數降 0.2（下限 1.3）、隔天再出；連續答對 3 次算學會
+/// 複習卡：自己對局裡走錯的局面，答案是引擎的正解。使用間隔重複排程：
+/// 答對間隔 3 天 → 7 天 → 之後乘上難度係數（起始 2.5）；答錯連續答對歸零、係數降 0.2（下限 1.3）、3 天後再出；連續答對 3 次算學會
 struct ReviewCard: Codable, Identifiable, Hashable {
   enum Kind: String, Codable, CaseIterable {
     case endgame, time, reversal, tactic, other
     var zh: String {
       switch self {
-      case .endgame: "殘局失誤"
-      case .time: "時間壓力下的失誤"
-      case .reversal: "被逆轉的那一步"
-      case .tactic: "戰術失誤"
-      case .other: "其他關鍵失誤"
+      case .endgame: String(localized: "殘局失誤")
+      case .time: String(localized: "時間壓力下的失誤")
+      case .reversal: String(localized: "被逆轉的那一步")
+      case .tactic: String(localized: "戰術失誤")
+      case .other: String(localized: "其他關鍵失誤")
       }
     }
     var icon: String {
@@ -64,6 +64,7 @@ struct ReviewCard: Codable, Identifiable, Hashable {
   var lastDay: Int? = nil
 
   var isNew: Bool { reps == 0 }
+  var availableDay: Int { max(due, lastDay.map { $0 + ReviewStore.minimumInterval } ?? due) }
 }
 
 enum Day {
@@ -83,6 +84,7 @@ final class ReviewStore {
   static let shared = ReviewStore()
 
   static let graduate = 3
+  nonisolated static let minimumInterval = 3
   private(set) var cards: [ReviewCard] = []
   /// 有練習的日子（第幾天 → 做了幾題）
   private(set) var days: [Int: Int] = [:]
@@ -104,11 +106,25 @@ final class ReviewStore {
       days = s.days
       if cards.count != s.cards.count { save() }
     }
+    if persist {
+      // iCloud：別的裝置練過的合併進來
+      CloudSync.start { [weak self] remote in
+        guard let self else { return }
+        let m = CloudSync.merged(local: .init(cards: self.cards, days: self.days), remote: remote)
+        guard m.cards.count != self.cards.count || m.days != self.days || m.cards != self.cards.sorted(by: { $0.date > $1.date }) else { return }
+        self.cards = m.cards
+        self.days = m.days
+        self.save()
+      }
+    }
   }
 
   private func save() {
     guard persist else { return }
     try? JSONEncoder().encode(Saved(cards: cards, days: days)).write(to: Self.file, options: .atomic)
+    CloudSync.push(cards: cards, days: days)
+    // 小工具的進度跟著更新
+    Task { @MainActor in WidgetBridge.update() }
   }
 
   // MARK: 卡片
@@ -139,7 +155,7 @@ final class ReviewStore {
   /// 今天要做的：到期的舊題全部，加上今天的新題額度
   var dueCards: [ReviewCard] {
     let today = Day.number()
-    let due = cards.filter { !$0.mastered && $0.due <= today }
+    let due = cards.filter { !$0.mastered && $0.availableDay <= today }
     return due.filter { !$0.isNew } + due.filter(\.isNew).prefix(newLeftToday)
   }
   var masteredCount: Int { cards.filter(\.mastered).count }
@@ -153,7 +169,7 @@ final class ReviewStore {
   /// 這題走得多熟：一次走對、有幫忙（提示、中間走錯過）、看了答案
   enum Recall { case clean, helped, shown }
 
-  /// 熟悉度回饋到排程：一次走對照常拉長；有幫忙也算完成，但間隔拉長得慢、難度係數降一點；看了答案明天再來
+  /// 熟悉度回饋到排程：一次走對照常拉長；有幫忙也算完成，但間隔拉長得慢、難度係數降一點；看了答案至少隔 3 天再來
   func answer(_ id: String, recall: Recall) {
     switch recall {
     case .clean: answer(id, ok: true)
@@ -167,7 +183,7 @@ final class ReviewStore {
       c.streak += 1
       c.ease = max(1.3, c.ease - 0.15)
       c.lastDay = today
-      c.interval = c.streak == 1 ? 1 : max(c.interval + 1, Int((Double(c.interval) * 1.2).rounded()))
+      c.interval = c.streak == 1 ? Self.minimumInterval : max(Self.minimumInterval, c.interval + 1, Int((Double(c.interval) * 1.2).rounded()))
       c.due = today + c.interval
       // 有幫忙的不算學會：要自己走對才移出題庫
       c.mastered = false
@@ -186,7 +202,7 @@ final class ReviewStore {
     c.reps += 1
     if ok {
       c.streak += 1
-      c.interval = c.streak == 1 ? 1 : c.streak == 2 ? 3 : max(c.interval + 1, Int((Double(c.interval) * c.ease).rounded()))
+      c.interval = c.streak == 1 ? Self.minimumInterval : c.streak == 2 ? 7 : max(c.interval + 1, Int((Double(c.interval) * c.ease).rounded()))
       c.due = today + c.interval
       c.mastered = c.streak >= Self.graduate
     } else {
@@ -194,8 +210,8 @@ final class ReviewStore {
       c.lapses += 1
       c.streak = 0
       c.ease = max(1.3, c.ease - 0.2)
-      c.interval = 1
-      c.due = today + 1
+      c.interval = Self.minimumInterval
+      c.due = today + Self.minimumInterval
       c.mastered = false
     }
     cards[i] = c
@@ -207,12 +223,12 @@ final class ReviewStore {
   /// 剛剛（今天、昨天）沒走到、還沒重新答對的
   var relearning: [ReviewCard] {
     let today = Day.number()
-    return cards.filter { !$0.mastered && $0.streak == 0 && ($0.lastMissDay ?? -9) >= today - 1 }.sorted { $0.due < $1.due }
+    return cards.filter { !$0.mastered && $0.streak == 0 && ($0.lastMissDay ?? -9) >= today - 1 }.sorted { $0.availableDay < $1.availableDay }
   }
   /// 答對過、等下次複習的
   var waiting: [ReviewCard] {
     let today = Day.number()
-    return cards.filter { !$0.mastered && $0.streak > 0 && $0.due > today }.sorted { $0.due < $1.due }
+    return cards.filter { !$0.mastered && $0.streak > 0 && $0.availableDay > today }.sorted { $0.availableDay < $1.availableDay }
   }
   /// 今天已練（今天做過的題，不管結果）
   var doneToday: [ReviewCard] { let t = Day.number(); return cards.filter { $0.lastDay == t } }

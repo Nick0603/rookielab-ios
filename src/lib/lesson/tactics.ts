@@ -1,5 +1,6 @@
 import { Chess, type Color, type Move, type PieceSymbol, type Square } from 'chess.js';
 import type { Lang } from '../i18n/lang';
+import { bare, def } from '../i18n/gen';
 
 /**
  * 戰術標籤：把「這個局面有什麼風險、有什麼機會」變成確定性的判斷。
@@ -31,22 +32,22 @@ export interface Tactic {
 }
 
 /** 顯示用詞統一在這裡。priority 越小越先講 */
-export const TACTIC_META: Record<TacticTag, { zh: string; en: string; priority: number }> = {
-  mate_threat: { zh: '殺棋威脅', en: 'Mate threat', priority: 0 },
-  back_rank: { zh: '底線殺', en: 'Back-rank mate', priority: 0 },
-  fork: { zh: '捉雙', en: 'Fork', priority: 1 },
-  pawn_fork: { zh: '兵捉雙', en: 'Pawn fork', priority: 1 },
-  hanging: { zh: '沒被保護的子', en: 'Undefended piece', priority: 2 },
-  pin: { zh: '牽制', en: 'Pin', priority: 3 },
-  skewer: { zh: '串打', en: 'Skewer', priority: 3 },
-  discovered: { zh: '閃擊', en: 'Discovered attack', priority: 3 },
-  trapped: { zh: '被困的子', en: 'Trapped piece', priority: 4 },
-  outnumbered: { zh: '攻守數不夠', en: 'Outnumbered', priority: 5 },
-  passed_pawn: { zh: '通路兵', en: 'Passed pawn', priority: 6 },
-  undeveloped: { zh: '出子落後', en: 'Slow development', priority: 7 },
-  early_queen: { zh: '過早出后', en: 'Early queen', priority: 7 },
-  moved_twice: { zh: '同子走兩次', en: 'Same piece twice', priority: 7 },
-  uncastled: { zh: '還沒入堡', en: 'Not castled', priority: 7 },
+export const TACTIC_META: Record<TacticTag, { zh: string; en: string; es: string; pt: string; priority: number }> = {
+  mate_threat: { zh: '殺棋威脅', en: 'Mate threat', es: 'amenaza de mate', pt: 'ameaça de mate', priority: 0 },
+  back_rank: { zh: '底線殺', en: 'Back-rank mate', es: 'mate del pasillo', pt: 'mate do corredor', priority: 0 },
+  fork: { zh: '捉雙', en: 'Fork', es: 'horquilla', pt: 'garfo', priority: 1 },
+  pawn_fork: { zh: '兵捉雙', en: 'Pawn fork', es: 'horquilla de peón', pt: 'garfo de peão', priority: 1 },
+  hanging: { zh: '沒被保護的子', en: 'Undefended piece', es: 'pieza sin defender', pt: 'peça sem proteção', priority: 2 },
+  pin: { zh: '牽制', en: 'Pin', es: 'clavada', pt: 'cravada', priority: 3 },
+  skewer: { zh: '串打', en: 'Skewer', es: 'ataque en rayos X', pt: 'raio X', priority: 3 },
+  discovered: { zh: '閃擊', en: 'Discovered attack', es: 'ataque a la descubierta', pt: 'ataque descoberto', priority: 3 },
+  trapped: { zh: '被困的子', en: 'Trapped piece', es: 'pieza atrapada', pt: 'peça presa', priority: 4 },
+  outnumbered: { zh: '攻守數不夠', en: 'Outnumbered', es: 'más atacantes que defensores', pt: 'mais atacantes que defensores', priority: 5 },
+  passed_pawn: { zh: '通路兵', en: 'Passed pawn', es: 'peón pasado', pt: 'peão passado', priority: 6 },
+  undeveloped: { zh: '出子落後', en: 'Slow development', es: 'desarrollo lento', pt: 'desenvolvimento lento', priority: 7 },
+  early_queen: { zh: '過早出后', en: 'Early queen', es: 'dama sacada demasiado pronto', pt: 'dama saindo cedo demais', priority: 7 },
+  moved_twice: { zh: '同子走兩次', en: 'Same piece twice', es: 'la misma pieza dos veces', pt: 'a mesma peça duas vezes', priority: 7 },
+  uncastled: { zh: '還沒入堡', en: 'Not castled', es: 'sin enrocar', pt: 'sem roque', priority: 7 },
 };
 
 export const VALUE: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 };
@@ -69,7 +70,18 @@ export const label = (square: Square, type: PieceSymbol): PieceRef => ({ square,
 
 /** 中文「c3 馬」；英文「knight on c3」 */
 export const pieceName = (p: PieceRef, lang: Lang = 'zh'): string =>
-  (lang !== 'zh' ? `${EN_PIECE[p.type]} on ${p.square}` : `${p.square} ${ZH_PIECE[p.type]}`);
+  (lang === 'zh' ? `${p.square} ${ZH_PIECE[p.type]}`
+    : lang === 'es' ? `${bare('es', p.type)} en ${p.square}`
+    : lang === 'pt' ? `${bare('pt', p.type)} em ${p.square}`
+    : `${EN_PIECE[p.type]} on ${p.square}`);
+
+/** 西／葡文帶定冠詞：el caballo en e5；其他語言同 pieceName（英文的 the 由句子自己加） */
+export const pieceNameDef = (p: PieceRef, lang: Lang = 'zh'): string =>
+  (lang === 'es' ? `${def('es', p.type)} en ${p.square}` : lang === 'pt' ? `${def('pt', p.type)} em ${p.square}` : pieceName(p, lang));
+
+/** 戰術名稱（小寫放進句子裡用；中文不變） */
+export const tacticLabel = (tag: TacticTag, lang: Lang): string =>
+  (lang === 'zh' ? TACTIC_META[tag].zh : lang === 'es' ? TACTIC_META[tag].es : lang === 'pt' ? TACTIC_META[tag].pt : TACTIC_META[tag].en.toLowerCase());
 export const opp = (c: Color): Color => (c === 'w' ? 'b' : 'w');
 
 const FILES = 'abcdefgh';

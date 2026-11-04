@@ -1,9 +1,10 @@
 import { tl } from '@/lib/i18n/lang';
+import { cap as capital, genderOf, indef as indefArt, isRomance, isSwapped, joinList, mkT, person, pieceNames, withVoiceSwap, bare } from '../i18n/gen';
 import { scoreText } from '../analysis/winprob';
 import { Chess, type Color, type Move, type PieceSymbol, type Square } from 'chess.js';
 import type { Lang } from '../i18n/lang';
 import type { MoveRecord } from '../types';
-import { EN_PIECE, moveTactics, opp, TACTIC_META, trappedTactics, VALUE, ZH_PIECE, type Tactic } from './tactics';
+import { EN_PIECE, moveTactics, opp, tacticLabel, TACTIC_META, trappedTactics, VALUE, ZH_PIECE, type Tactic } from './tactics';
 import { moveRelations } from './relations';
 import { sacrificedPiece } from '../analysis/brilliant';
 import { castleName, moveName } from '../moveName';
@@ -60,6 +61,8 @@ export interface Explanation {
   arrows: [Square, Square, MarkKind][];
   squares: [Square, MarkKind][];
   lines: Variation[];
+  /** 西／葡文專用：換成對手角度的版本（動詞變位與所有格會變，不能靠字串取代，所以重新產生一次） */
+  swapped?: () => Explanation;
   /** 給驗證腳本用：每個說法背後的事實 */
   facts: Record<string, unknown>;
 }
@@ -67,13 +70,21 @@ export interface Explanation {
 const BAD = ['blunder', 'mistake', 'miss', 'inaccuracy'];
 
 function tr(lang: Lang) {
-  return (zh: string, en: string) => (lang !== 'zh' ? en : zh);
+  return mkT(lang);
 }
 
-const pname = (t: PieceSymbol, lang: Lang) => (tl(lang, ZH_PIECE[t], EN_PIECE[t]));
+/** 西／葡文句子用的語言（其他語言走不到這些分支，隨便給一個） */
+const rom = (lang: Lang): 'es' | 'pt' => (lang === 'pt' ? 'pt' : 'es');
+/** 走這步的人（解說裡的「你」）或另一方；swapVoice 重新產生時會自動對調 */
+const P = (lang: Lang, mine: boolean) => person(rom(lang), mine);
+const G = (lang: Lang, t: PieceSymbol) => (genderOf(rom(lang), t) === 'f' ? 'a' : 'o');
+const INDEF = (lang: Lang, t: PieceSymbol) => indefArt(rom(lang), t);
 
-/** 「你的 e5 馬」／「your knight on e5」 */
+const pname = (t: PieceSymbol, lang: Lang) => (isRomance(lang) ? bare(lang, t) : tl(lang, ZH_PIECE[t], EN_PIECE[t]));
+
+/** 「你的 e5 馬」／「your knight on e5」／「tu caballo en e5」 */
 function whose(sq: Square, t: PieceSymbol, mine: boolean, lang: Lang) {
+  if (isRomance(lang)) return `${person(lang, mine).own(t)} ${lang === 'es' ? 'en' : 'em'} ${sq}`;
   return lang !== 'zh'
     ? `${mine ? 'your' : 'the opponent\'s'} ${EN_PIECE[t]} on ${sq}`
     : `${mine ? '你的' : '對手的'} ${sq} ${ZH_PIECE[t]}`;
@@ -81,6 +92,7 @@ function whose(sq: Square, t: PieceSymbol, mine: boolean, lang: Lang) {
 
 function list(items: string[], lang: Lang) {
   if (items.length <= 1) return items.join('');
+  if (isRomance(lang)) return joinList(lang, items);
   return lang !== 'zh' ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : items.join('、');
 }
 
@@ -96,16 +108,17 @@ const nm = (m: { san: string; before?: string } | null | undefined, lang: Lang) 
 };
 
 /** 一步棋的說明：誰、吃了什麼、將軍、捉雙、攻擊了什麼 */
-function caption(fen: string, m: Move, me: Color, lang: Lang): string {
+/** withWho＝false：句子前面已經說了是誰（「對手最強的應手是…」），不再加主詞 */
+function caption(fen: string, m: Move, me: Color, lang: Lang, withWho = true): string {
   const t = tr(lang);
   const mine = m.color === me;
-  const who = mine ? t('你', 'You') : t('對手', 'Opponent');
+  const who = t(mine ? '你' : '對手', mine ? 'You' : 'Opponent', P(lang, mine).you ? 'Tú' : 'Rival', P(lang, mine).you ? 'Você' : 'Adversário');
   const bits: string[] = [];
-  if (m.captured) bits.push(t(`吃掉${whose(m.to, m.captured, !mine, lang)}`, `takes ${whose(m.to, m.captured, !mine, lang)}`));
-  if (m.promotion) bits.push(t(`升變成${ZH_PIECE[m.promotion]}`, `promotes to a ${EN_PIECE[m.promotion]}`));
+  if (m.captured) bits.push(t(`吃掉${whose(m.to, m.captured, !mine, lang)}`, `takes ${whose(m.to, m.captured, !mine, lang)}`, `captura ${whose(m.to, m.captured, !mine, lang)}`, `captura ${whose(m.to, m.captured, !mine, lang)}`));
+  if (m.promotion) bits.push(t(`升變成${ZH_PIECE[m.promotion]}`, `promotes to a ${EN_PIECE[m.promotion]}`, `promociona a ${pname(m.promotion, lang)}`, `promove a ${pname(m.promotion, lang)}`));
   const after = new Chess(m.after);
-  if (after.isCheckmate()) bits.push(t('將死', 'checkmate'));
-  else if (after.isCheck()) bits.push(t('將軍', 'check'));
+  if (after.isCheckmate()) bits.push(t('將死', 'checkmate', 'jaque mate', 'xeque-mate'));
+  else if (after.isCheck()) bits.push(t('將軍', 'check', 'jaque', 'xeque'));
   const tac = moveTactics(fen, m.lan, mine ? me : opp(me))
     .filter((x) => ['fork', 'pawn_fork', 'pin', 'skewer', 'discovered'].includes(x.tag))[0];
   if (tac) bits.push(tacticText(tac, !mine, lang));
@@ -114,29 +127,29 @@ function caption(fen: string, m: Move, me: Color, lang: Lang): string {
     const hit = rel.attacks
       .filter((l) => l.target.type !== 'k' && (VALUE[l.target.type] > VALUE[m.piece] || new Chess(m.after).attackers(l.to, opp(m.color)).length === 0) && VALUE[l.target.type] >= 3)
       .sort((a, b) => VALUE[b.target.type] - VALUE[a.target.type])[0];
-    if (hit) bits.push(t(`攻擊${whose(hit.to, hit.target.type, !mine, lang)}`, `attacks ${whose(hit.to, hit.target.type, !mine, lang)}`));
+    if (hit) bits.push(t(`攻擊${whose(hit.to, hit.target.type, !mine, lang)}`, `attacks ${whose(hit.to, hit.target.type, !mine, lang)}`, `ataca ${whose(hit.to, hit.target.type, !mine, lang)}`, `ataca ${whose(hit.to, hit.target.type, !mine, lang)}`));
   }
   // 代號後面附白話（哪個子從哪走到哪、入堡），吃了什麼在後面的說明裡
   const name = moveName(fen, m.san, lang, false);
   const named = name ? `${m.san}${t(`（${name}）`, ` (${name})`)}` : m.san;
-  return `${who} ${named}${bits.length ? t('：', ': ') + bits.join(t('，', ', ')) : ''}`;
+  return `${withWho ? `${who} ` : ''}${named}${bits.length ? t('：', ': ') + bits.join(t('，', ', ')) : ''}`;
 }
 
 /** 戰術的一句話；targetsMine = 被打的是我方 */
 function tacticText(tac: Tactic, targetsMine: boolean, lang: Lang): string {
   const t = tr(lang);
   const names = tac.pieces.map((p) => whose(p.square, p.type, targetsMine, lang));
-  const label = lang !== 'zh' ? TACTIC_META[tac.tag].en.toLowerCase() : TACTIC_META[tac.tag].zh;
+  const label = tacticLabel(tac.tag, lang);
   switch (tac.tag) {
     case 'fork':
     case 'pawn_fork':
-      return t(`同時攻擊${list(names, lang)}（${label}）`, `attacks ${list(names, lang)} at once (${label})`);
+      return t(`同時攻擊${list(names, lang)}（${label}）`, `attacks ${list(names, lang)} at once (${label})`, `ataca a la vez ${list(names, lang)} (${label})`, `ataca ao mesmo tempo ${list(names, lang)} (${label})`);
     case 'pin':
-      return t(`牽制${names[0]}，它後面是${names[1] ?? ''}`, `pins ${names[0]} to ${names[1] ?? ''}`);
+      return t(`牽制${names[0]}，它後面是${names[1] ?? ''}`, `pins ${names[0]} to ${names[1] ?? ''}`, `clava ${names[0]} contra ${names[1] ?? ''}`, `crava ${names[0]} contra ${names[1] ?? ''}`);
     case 'skewer':
-      return t(`串打${names[0]}，後面還有${names[1] ?? ''}`, `skewers ${names[0]}, with ${names[1] ?? ''} behind`);
+      return t(`串打${names[0]}，後面還有${names[1] ?? ''}`, `skewers ${names[0]}, with ${names[1] ?? ''} behind`, `ataca en rayos X ${names[0]}, con ${names[1] ?? ''} detrás`, `faz um raio X em ${names[0]}, com ${names[1] ?? ''} atrás`);
     case 'discovered':
-      return t(`打開線路攻擊${list(names, lang)}（${label}）`, `uncovers an attack on ${list(names, lang)} (${label})`);
+      return t(`打開線路攻擊${list(names, lang)}（${label}）`, `uncovers an attack on ${list(names, lang)} (${label})`, `abre la línea y ataca ${list(names, lang)} (${label})`, `abre a linha e ataca ${list(names, lang)} (${label})`);
     default:
       return label;
   }
@@ -155,13 +168,15 @@ export function describeMove(fenBefore: string, san: string, me: Color, lang: La
  */
 function buildLine(kind: Variation['kind'], title: string, startFen: string, sans: string[], me: Color, lang: Lang, captions = true): Variation {
   const t = tr(lang);
+  const M = P(lang, true);
+  const O = P(lang, false);
   const steps: LineStep[] = [];
   const moves: Move[] = [];
   let fen = startFen;
   for (const san of sans) {
     const m = playSan(fen, san);
     if (!m) break;
-    steps.push({ san: m.san, from: m.from, to: m.to, fen: m.after, mine: m.color === me, caption: captions ? caption(fen, m, me, lang) : m.san });
+    steps.push({ san: m.san, from: m.from, to: m.to, fen: m.after, mine: (m.color === me) !== isSwapped(), caption: captions ? caption(fen, m, me, lang) : m.san });
     moves.push(m);
     fen = m.after;
   }
@@ -195,22 +210,23 @@ function buildLine(kind: Variation['kind'], title: string, startFen: string, san
   const end = kept.length ? new Chess(kept.at(-1)!.after) : new Chess(startFen);
   const mate = end.isCheckmate() ? (end.turn() === me ? 'me' : 'opp') : undefined;
 
-  const names = (ps: PieceSymbol[]) => list(ps.map((p) => pname(p, lang)), lang);
+  const names = (ps: PieceSymbol[]) => (isRomance(lang) ? pieceNames(lang, ps) : list(ps.map((p) => pname(p, lang)), lang));
+  const bareNames = (ps: PieceSymbol[]) => list(ps.map((p) => pname(p, lang)), lang);
   let outcome: string;
-  if (mate === 'me') outcome = t('你被將死。', 'You get checkmated.');
-  else if (mate === 'opp') outcome = t('將死對手。', 'You deliver checkmate.');
-  else if (!lost.length && !won.length && !kept.some((m) => m.promotion)) outcome = t('雙方都沒有丟子。', 'No material changes hands.');
+  if (mate === 'me') outcome = t('你被將死。', 'You get checkmated.', M.you ? 'Te dan jaque mate.' : 'Al rival le dan jaque mate.', `${capital(M.s)}leva xeque-mate.`);
+  else if (mate === 'opp') outcome = t('將死對手。', 'You deliver checkmate.', `${capital(M.s + M.v('da'))} jaque mate.`, `${capital(M.s)}dá xeque-mate.`);
+  else if (!lost.length && !won.length && !kept.some((m) => m.promotion)) outcome = t('雙方都沒有丟子。', 'No material changes hands.', 'Nadie pierde material.', 'Ninguém perde material.');
   else {
     const parts: string[] = [];
-    if (lost.length) parts.push(t(`你丟了${names(lost)}`, `you lose ${names(lost)}`));
-    if (won.length) parts.push(t(`吃到${names(won)}`, `you win ${names(won)}`));
+    if (lost.length) parts.push(t(`你丟了${names(lost)}`, `you lose ${names(lost)}`, `${M.s}${M.v('pierde')} ${names(lost)}`, `${M.s}perde ${names(lost)}`));
+    if (won.length) parts.push(t(`吃到${names(won)}`, `you win ${names(won)}`, `${lost.length ? '' : M.s}${M.v('gana')} ${names(won)}`, `${lost.length ? '' : M.s}ganha ${names(won)}`));
     // 升變也算子力（淨得失裡已經算進去，句子要說出來）
     const promos = kept.filter((m) => m.promotion);
     const myPromo = promos.filter((m) => m.color === me).map((m) => m.promotion!);
     const oppPromo = promos.filter((m) => m.color !== me).map((m) => m.promotion!);
-    if (myPromo.length) parts.push(t(`你升變出${names(myPromo)}`, `you promote to ${names(myPromo)}`));
-    if (oppPromo.length) parts.push(t(`對手升變出${names(oppPromo)}`, `the opponent promotes to ${names(oppPromo)}`));
-    const verdict = net > 0 ? t(`淨賺 ${net} 分`, `net +${net}`) : net < 0 ? t(`淨少 ${-net} 分`, `net −${-net}`) : t('打平', 'even');
+    if (myPromo.length) parts.push(t(`你升變出${names(myPromo)}`, `you promote to ${names(myPromo)}`, `${lost.length || won.length ? '' : M.s}${M.v('promociona')} a ${bareNames(myPromo)}`, `${lost.length || won.length ? '' : M.s}promove a ${bareNames(myPromo)}`));
+    if (oppPromo.length) parts.push(t(`對手升變出${names(oppPromo)}`, `the opponent promotes to ${names(oppPromo)}`, `${O.s}${O.v('promociona')} a ${bareNames(oppPromo)}`, `${O.s}promove a ${bareNames(oppPromo)}`));
+    const verdict = net > 0 ? t(`淨賺 ${net} 分`, `net +${net}`, `saldo +${net}`, `saldo +${net}`) : net < 0 ? t(`淨少 ${-net} 分`, `net −${-net}`, `saldo −${-net}`, `saldo −${-net}`) : t('打平', 'even', 'igualado', 'igual');
     outcome = lang !== 'zh'
       ? `${parts.join(', ').replace(/^./, (c) => c.toUpperCase())} (${verdict}).`
       : `${parts.join('，')}，${verdict}。`;
@@ -230,11 +246,13 @@ const uciOf = (m: Move) => m.lan;
 /** 該走的那步好在哪 */
 function whyBest(fenBefore: string, best: Move, line: Variation, me: Color, lang: Lang, vs?: Variation, played?: Move, win?: { best: string; played: string }): string {
   const t = tr(lang);
-  if (line.mate === 'opp') return t(`${nm(best, lang)} 開始可以將死對手。`, `${nm(best, lang)} starts a forced checkmate.`);
+  const M = P(lang, true);
+  const O = P(lang, false);
+  if (line.mate === 'opp') return t(`${nm(best, lang)} 開始可以將死對手。`, `${nm(best, lang)} starts a forced checkmate.`, `${nm(best, lang)} inicia un jaque mate forzado.`, `${nm(best, lang)} inicia um xeque-mate forçado.`);
   const board = new Chess(fenBefore);
   if (best.captured && board.attackers(best.to, opp(me)).length === 0 && VALUE[best.captured] >= 1) {
     return t(`${nm(best, lang)} 直接吃掉${whose(best.to, best.captured, false, lang)}，它沒人保護。`,
-      `${nm(best, lang)} simply takes ${whose(best.to, best.captured, false, lang)}, which was undefended.`);
+      `${nm(best, lang)} simply takes ${whose(best.to, best.captured, false, lang)}, which was undefended.`, `${nm(best, lang)} captura ${whose(best.to, best.captured, false, lang)}, que estaba sin defensa.`, `${nm(best, lang)} captura ${whose(best.to, best.captured, false, lang)}, que estava sem proteção.`);
   }
   const tac = moveTactics(fenBefore, uciOf(best), me).find((x) => x.side === 'chance' && ['fork', 'pawn_fork', 'pin', 'skewer', 'discovered'].includes(x.tag));
   if (tac) return `${nm(best, lang)} ${tacticText(tac, false, lang)}${t('。', '.')}`;
@@ -244,26 +262,26 @@ function whyBest(fenBefore: string, best: Move, line: Variation, me: Color, lang
   const playedSaved = played ? savedPiece(fenBefore, played, me) : null;
   if (saved && !(playedSaved && playedSaved.sq === saved.sq)) {
     return t(`${nm(best, lang)} 保住${whose(saved.sq, saved.type, true, lang)}，它原本正被攻擊。`,
-      `${nm(best, lang)} saves ${whose(saved.sq, saved.type, true, lang)}, which was under attack.`);
+      `${nm(best, lang)} saves ${whose(saved.sq, saved.type, true, lang)}, which was under attack.`, `${nm(best, lang)} salva ${whose(saved.sq, saved.type, true, lang)}, que estaba bajo ataque.`, `${nm(best, lang)} salva ${whose(saved.sq, saved.type, true, lang)}, que estava sob ataque.`);
   }
-  if (line.net > 0) return t(`照這樣走，${line.outcome}`, `Following this line: ${line.outcome}`);
+  if (line.net > 0) return t(`照這樣走，${line.outcome}`, `Following this line: ${line.outcome}`, `Siguiendo esta línea: ${line.outcome}`, `Seguindo esta linha: ${line.outcome}`);
   if (vs && line.net - vs.net >= 1) {
-    return t(`照這樣走，${line.outcome}比你走的多 ${line.net - vs.net} 分。`, `Following this line: ${line.outcome} That is ${line.net - vs.net} better than your move.`);
+    return t(`照這樣走，${line.outcome}比你走的多 ${line.net - vs.net} 分。`, `Following this line: ${line.outcome} That is ${line.net - vs.net} better than your move.`, `Siguiendo esta línea: ${line.outcome} ${line.net - vs.net === 1 ? 'Es' : 'Son'} ${line.net - vs.net} ${line.net - vs.net === 1 ? 'punto' : 'puntos'} más que con ${M.you ? 'tu jugada' : 'la jugada del rival'}.`, `Seguindo esta linha: ${line.outcome} ${line.net - vs.net === 1 ? 'É' : 'São'} ${line.net - vs.net} ${line.net - vs.net === 1 ? 'ponto' : 'pontos'} a mais do que com ${M.you ? 'o seu lance' : 'o lance do adversário'}.`);
   }
   if (new Chess(best.after).isCheck()) {
-    return t(`${nm(best, lang)} 將軍，搶到先手，對手只能先應付。`, `${nm(best, lang)} gives check and keeps the initiative.`);
+    return t(`${nm(best, lang)} 將軍，搶到先手，對手只能先應付。`, `${nm(best, lang)} gives check and keeps the initiative.`, `${nm(best, lang)} da jaque y mantiene la iniciativa.`, `${nm(best, lang)} dá xeque e mantém a iniciativa.`);
   }
   const rel = moveRelations(fenBefore, best.san);
   const playedHits = played ? new Set(moveRelations(fenBefore, played.san).attacks.map((l) => l.to)) : new Set<string>();
   const hit = rel.attacks.filter((l) => l.target.type !== 'k' && VALUE[l.target.type] >= 3 && !playedHits.has(l.to))[0];
   if (hit) return t(`${nm(best, lang)} 攻擊${whose(hit.to, hit.target.type, false, lang)}，對手要先應付。`,
-    `${nm(best, lang)} attacks ${whose(hit.to, hit.target.type, false, lang)}, so the opponent has to respond.`);
-  if (rel.threats[0]) return t(`${nm(best, lang)} 準備 ${nm(rel.threats[0], lang)}。`, `${nm(best, lang)} prepares ${nm(rel.threats[0], lang)}.`);
+    `${nm(best, lang)} attacks ${whose(hit.to, hit.target.type, false, lang)}, so the opponent has to respond.`, `${nm(best, lang)} ataca ${whose(hit.to, hit.target.type, false, lang)}, así que ${O.noun} ${O.v('tiene')} que responder.`, `${nm(best, lang)} ataca ${whose(hit.to, hit.target.type, false, lang)}, então ${O.noun} precisa responder.`);
+  if (rel.threats[0]) return t(`${nm(best, lang)} 準備 ${nm(rel.threats[0], lang)}。`, `${nm(best, lang)} prepares ${nm(rel.threats[0], lang)}.`, `${nm(best, lang)} prepara ${nm(rel.threats[0], lang)}.`, `${nm(best, lang)} prepara ${nm(rel.threats[0], lang)}.`);
   if (win) {
     return t(`差別在比較長遠的局面：${nm(best, lang)} 之後評分維持在 ${win.best}，你走的掉到 ${win.played}。`,
-      `The difference is long-term: after ${nm(best, lang)} the score stays at ${win.best}; your move drops it to ${win.played}.`);
+      `The difference is long-term: after ${nm(best, lang)} the score stays at ${win.best}; your move drops it to ${win.played}.`, `La diferencia está en el largo plazo: tras ${nm(best, lang)} la evaluación se mantiene en ${win.best}; ${M.you ? 'tu jugada la baja' : 'la jugada del rival la baja'} a ${win.played}.`, `A diferença está no longo prazo: depois de ${nm(best, lang)} a avaliação fica em ${win.best}; ${M.you ? 'o seu lance a reduz' : 'o lance do adversário a reduz'} para ${win.played}.`);
   }
-  return t(`${nm(best, lang)} 是引擎認為最好的一步，局面保持得住。`, `${nm(best, lang)} is the engine's choice and keeps your chances.`);
+  return t(`${nm(best, lang)} 是引擎認為最好的一步，局面保持得住。`, `${nm(best, lang)} is the engine's choice and keeps your chances.`, `${nm(best, lang)} es la elección del motor y mantiene ${M.you ? 'tus opciones' : 'las opciones del rival'}.`, `${nm(best, lang)} é a escolha do motor e mantém ${M.you ? 'as suas chances' : 'as chances do adversário'}.`);
 }
 
 /** 走之前正被攻擊、保護不夠的我方子（輕子以上），這一步走完不再有事 */
@@ -318,7 +336,15 @@ export function materialGap(fenBefore: string, san: string, record: MoveRecord):
 
 /** captions = false：延伸棋局不產生逐步說明（很重）。只需要分類與結論時用，例如報告的關鍵步清單 */
 export function explainMove(fenBefore: string, san: string, record: MoveRecord, lang: Lang = 'zh', captions = true): Explanation | null {
+  const e = explainCore(fenBefore, san, record, lang, captions);
+  if (e && isRomance(lang) && !isSwapped()) e.swapped = () => withVoiceSwap(true, () => explainCore(fenBefore, san, record, lang, captions)) ?? e;
+  return e;
+}
+
+function explainCore(fenBefore: string, san: string, record: MoveRecord, lang: Lang, captions: boolean): Explanation | null {
   const t = tr(lang);
+  const M = P(lang, true);
+  const O = P(lang, false);
   const board = new Chess(fenBefore);
   const me = board.turn();
   const played = playSan(fenBefore, san);
@@ -326,11 +352,11 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
   const after = new Chess(played.after);
   const bad = BAD.includes(record.cls);
 
-  const playedLine = buildLine('played', t(`你走的 ${san} 之後`, `After your ${san}`), fenBefore, [san, ...record.line], me, lang, captions);
+  const playedLine = buildLine('played', t(`你走的 ${san} 之後`, `After your ${san}`, M.you ? `Después de tu jugada ${san}` : `Después de la jugada ${san} del rival`, M.you ? `Depois do seu lance ${san}` : `Depois do lance ${san} do adversário`), fenBefore, [san, ...record.line], me, lang, captions);
   const bestSans = record.bestLine?.length ? record.bestLine : record.best ? [record.best] : [];
   const best = bestSans.length ? playSan(fenBefore, bestSans[0]) : null;
   const bestLine = best && best.san !== played.san
-    ? buildLine('best', t(`該走的 ${nm(best, lang)}`, `The better ${nm(best, lang)}`), fenBefore, bestSans, me, lang, captions)
+    ? buildLine('best', t(`該走的 ${nm(best, lang)}`, `The better ${nm(best, lang)}`, `Mejor jugada: ${nm(best, lang)}`, `Melhor lance: ${nm(best, lang)}`), fenBefore, bestSans, me, lang, captions)
     : null;
   const reply = record.line[0] ? playSan(played.after, record.line[0]) : null;
   // 子力帳跟引擎評估對不上時補一句，不然「該走的那步淨少 5 分」會讓人看不懂
@@ -338,10 +364,10 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
   const sBefore = scoreText(record.winBefore, record.evalBefore, me);
   const sAfter = scoreText(record.winAfter, record.evalAfter, me);
   if (bestLine && !bestLine.mate && bestLine.net < 0) {
-    bestLine.note = t(`子力雖然少了，這仍是引擎評估最好的走法（評分 ${sBefore}）。`, `Material is down, but this is still the engine's best option (score ${sBefore}).`);
+    bestLine.note = t(`子力雖然少了，這仍是引擎評估最好的走法（評分 ${sBefore}）。`, `Material is down, but this is still the engine's best option (score ${sBefore}).`, `Hay menos material, pero sigue siendo la mejor opción del motor (evaluación ${sBefore}).`, `Há menos material, mas ainda é a melhor opção do motor (avaliação ${sBefore}).`);
   }
   if (!playedLine.mate && playedLine.net >= 0 && record.winBefore - record.winAfter >= 0.1) {
-    playedLine.note = t(`子力沒有少，但評分掉到 ${sAfter}。`, `No material is lost, but the score drops to ${sAfter}.`);
+    playedLine.note = t(`子力沒有少，但評分掉到 ${sAfter}。`, `No material is lost, but the score drops to ${sAfter}.`, `No se pierde material, pero la evaluación baja a ${sAfter}.`, `Não se perde material, mas a avaliação cai para ${sAfter}.`);
   }
 
   const reasons: string[] = [];
@@ -349,10 +375,10 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
   const squares: Explanation['squares'] = [];
   const facts: Record<string, unknown> = {};
   const lines = [playedLine, ...(bestLine ? [bestLine] : [])];
-  const drop = t(`評分 ${sBefore} → ${sAfter}。`, `Score ${sBefore} → ${sAfter}.`);
+  const drop = t(`評分 ${sBefore} → ${sAfter}。`, `Score ${sBefore} → ${sAfter}.`, `Evaluación ${sBefore} → ${sAfter}.`, `Avaliação ${sBefore} → ${sAfter}.`);
   const bestReason = () => {
     if (!best || !bestLine) return '';
-    if (playedLine.mate === 'me' && bestLine.mate !== 'me') return t(`${nm(best, lang)} 可以避開這個殺。`, `${nm(best, lang)} avoids the mate.`);
+    if (playedLine.mate === 'me' && bestLine.mate !== 'me') return t(`${nm(best, lang)} 可以避開這個殺。`, `${nm(best, lang)} avoids the mate.`, `${nm(best, lang)} evita el mate.`, `${nm(best, lang)} evita o mate.`);
     return whyBest(fenBefore, best, bestLine, me, lang, playedLine, played, { best: sBefore, played: sAfter });
   };
 
@@ -375,39 +401,42 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
       return null;
     })() : null;
     const why = after.isCheckmate()
-      ? t(`${san} 將死對手。`, `${san} is checkmate.`)
+      ? t(`${san} 將死對手。`, `${san} is checkmate.`, `${san} es jaque mate.`, `${san} é xeque-mate.`)
       : playedLine.mate === 'opp'
-      ? t(`${san} 開始連續將軍，對手逃不掉。`, `${san} starts a forced mate.`)
+      ? t(`${san} 開始連續將軍，對手逃不掉。`, `${san} starts a forced mate.`, `${san} inicia un mate forzado.`, `${san} inicia um mate forçado.`)
       // 傑出：先講送出了哪個子；同時有戰術就一起講（那通常就是對手不能吃的原因）
       : sac && taken ? t(`${san} 送出${whose(given!.square, given!.type, true, lang)}${tac ? `，同時${tacticText(tac, false, lang)}` : ''}。對手吃了之後：${playedLine.outcome}`,
-        `${san} gives away ${whose(given!.square, given!.type, true, lang)}${tac ? `, and ${tacticText(tac, false, lang)}` : ''}. After the capture: ${playedLine.outcome}`)
+        `${san} gives away ${whose(given!.square, given!.type, true, lang)}${tac ? `, and ${tacticText(tac, false, lang)}` : ''}. After the capture: ${playedLine.outcome}`, `${san} entrega ${whose(given!.square, given!.type, true, lang)}${tac ? ` y además ${tacticText(tac, false, lang)}` : ''}. Después de la captura: ${playedLine.outcome}`, `${san} entrega ${whose(given!.square, given!.type, true, lang)}${tac ? ` e ainda ${tacticText(tac, false, lang)}` : ''}. Depois da captura: ${playedLine.outcome}`)
       : sac ? t(`${san} 送出${whose(given!.square, given!.type, true, lang)}${tac ? `，同時${tacticText(tac, false, lang)}` : ''}。對手吃了會更糟，引擎建議的應手是 ${reply?.san ?? ''}。`,
-        `${san} offers ${whose(given!.square, given!.type, true, lang)}${tac ? `, and ${tacticText(tac, false, lang)}` : ''}. Taking it would make things worse; the engine's reply is ${reply?.san ?? ''}.`)
+        `${san} offers ${whose(given!.square, given!.type, true, lang)}${tac ? `, and ${tacticText(tac, false, lang)}` : ''}. Taking it would make things worse; the engine's reply is ${reply?.san ?? ''}.`, `${san} ofrece ${whose(given!.square, given!.type, true, lang)}${tac ? ` y además ${tacticText(tac, false, lang)}` : ''}. Aceptar el sacrificio sería peor; la respuesta que sugiere el motor es ${reply?.san ?? ''}.`, `${san} oferece ${whose(given!.square, given!.type, true, lang)}${tac ? ` e ainda ${tacticText(tac, false, lang)}` : ''}. Aceitar o sacrifício seria pior; a resposta sugerida pelo motor é ${reply?.san ?? ''}.`)
       : tac ? `${san} ${tacticText(tac, false, lang)}${t('。', '.')}`
       : next ? t(`${san} 之後，對手應完你有 ${nm(next.m, lang)}，${tacticText(next.tac, false, lang)}。`,
-        `After ${san} and the reply, you have ${nm(next.m, lang)}, which ${tacticText(next.tac, false, lang)}.`)
-      : whyBest(fenBefore, played, playedLine, me, lang).replace(/^.*是引擎認為最好的一步，局面保持得住。$/,
-        t(`${san} 是引擎的首選，評分維持在 ${sAfter}。`, `${san} is the engine's top choice; the score stays at ${sAfter}.`));
+        `After ${san} and the reply, you have ${nm(next.m, lang)}, which ${tacticText(next.tac, false, lang)}.`, `Después de ${san} y la respuesta, ${M.s}${M.v('tiene')} ${nm(next.m, lang)}, que ${tacticText(next.tac, false, lang)}.`, `Depois de ${san} e da resposta, ${M.s}tem ${nm(next.m, lang)}, que ${tacticText(next.tac, false, lang)}.`)
+      : whyBest(fenBefore, played, playedLine, me, lang).replace(
+        lang === 'zh' ? /^.*是引擎認為最好的一步，局面保持得住。$/
+          : lang === 'es' ? /^.*es la elección del motor y mantiene [^.]*\.$/
+          : lang === 'pt' ? /^.*é a escolha do motor e mantém [^.]*\.$/ : /(?!)/,
+        t(`${san} 是引擎的首選，評分維持在 ${sAfter}。`, `${san} is the engine's top choice; the score stays at ${sAfter}.`, `${san} es la primera opción del motor; la evaluación se mantiene en ${sAfter}.`, `${san} é a primeira opção do motor; a avaliação fica em ${sAfter}.`));
     reasons.push(why);
-    if (!sac && playedLine.steps.length > 1 && (playedLine.net !== 0 || playedLine.mate)) reasons.push(t(`接下來：${playedLine.outcome}`, `What follows: ${playedLine.outcome}`));
+    if (!sac && playedLine.steps.length > 1 && (playedLine.net !== 0 || playedLine.mate)) reasons.push(t(`接下來：${playedLine.outcome}`, `What follows: ${playedLine.outcome}`, `Lo que sigue: ${playedLine.outcome}`, `O que vem depois: ${playedLine.outcome}`));
     if (tac) for (const p of tac.pieces) squares.push([p.square, 'threat']);
     if (given) squares.push([given.square, 'best']);
     return {
       motif: sac ? 'good_sacrifice' : 'good_move',
       // 標題講出這步做到了什麼，不要只寫「好棋」
-      headline: sac ? t('傑出：棄子換更大的收穫', 'Brilliant: a sound sacrifice')
-        : after.isCheckmate() ? t('將殺', 'Checkmate')
-        : playedLine.mate === 'opp' ? t('開始連續將軍', 'Starts a forced mate')
-        : tac ? t(TACTIC_META[tac.tag].zh, TACTIC_META[tac.tag].en)
-        : next ? t(`準備${TACTIC_META[next.tac.tag].zh}`, `Sets up a ${TACTIC_META[next.tac.tag].en.toLowerCase()}`)
-        : t('好棋', 'Strong move'),
+      headline: sac ? t('傑出：棄子換更大的收穫', 'Brilliant: a sound sacrifice', 'Brillante: un sacrificio acertado', 'Brilhante: um sacrifício certeiro')
+        : after.isCheckmate() ? t('將殺', 'Checkmate', 'Jaque mate', 'Xeque-mate')
+        : playedLine.mate === 'opp' ? t('開始連續將軍', 'Starts a forced mate', 'Inicia un mate forzado', 'Inicia um mate forçado')
+        : tac ? t(TACTIC_META[tac.tag].zh, TACTIC_META[tac.tag].en, capital(TACTIC_META[tac.tag].es), capital(TACTIC_META[tac.tag].pt))
+        : next ? t(`準備${TACTIC_META[next.tac.tag].zh}`, `Sets up a ${TACTIC_META[next.tac.tag].en.toLowerCase()}`, `Prepara: ${tacticLabel(next.tac.tag, lang)}`, `Prepara: ${tacticLabel(next.tac.tag, lang)}`)
+        : t('好棋', 'Strong move', 'Jugada fuerte', 'Lance forte'),
       reasons, arrows, squares, lines: [playedLine], facts: { tactic: tac?.tag, net: playedLine.net },
     };
   }
 
   // ── 以下是走差的步：先講最嚴重的 ──
   let motif: Motif = 'positional';
-  let headline = t('局面變差', 'Position got worse');
+  let headline = t('局面變差', 'Position got worse', 'La posición empeoró', 'A posição piorou');
   const lineMoves: Move[] = [];
   { let f = fenBefore; for (const st of playedLine.steps) { const m = playSan(f, st.san); if (!m) break; lineMoves.push(m); f = m.after; } }
   const gap = (bestLine?.net ?? 0) - playedLine.net;
@@ -444,68 +473,68 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
     })();
     if (through) {
       motif = 'opened_line';
-      headline = t('讓出了攻擊線', 'Opened a line for the opponent');
+      headline = t('讓出了攻擊線', 'Opened a line for the opponent', 'Línea de ataque abierta', 'Linha de ataque aberta');
       reasons.push(t(`你的${pname(played.piece, lang)}原本擋在 ${played.from}，移開之後，對手的${pname(through.piece, lang)}可以從 ${through.from} 打到${whose(through.to, through.captured!, true, lang)}。`,
-        `Your ${EN_PIECE[played.piece]} was blocking on ${played.from}. Moving it opens the line from ${through.from} to ${whose(through.to, through.captured!, true, lang)}.`));
+        `Your ${EN_PIECE[played.piece]} was blocking on ${played.from}. Moving it opens the line from ${through.from} to ${whose(through.to, through.captured!, true, lang)}.`, `${capital(M.own(played.piece))} estaba bloqueando en ${played.from}. Al moverse, abre la línea de ${through.from} a ${whose(through.to, through.captured!, true, lang)}.`, `${capital(M.own(played.piece))} estava bloqueando em ${played.from}. Ao se mover, abre a linha de ${through.from} até ${whose(through.to, through.captured!, true, lang)}.`));
       arrows.push([through.from, through.to, 'threat']);
       squares.push([played.from, 'threat']);
       reasons.push(capOf(through));
       facts.lostSquare = through.to;
     } else if (trapped) {
       motif = 'trapped';
-      headline = t(`${pname(trapped.piece.type, lang)}被困住`, `Your ${EN_PIECE[trapped.piece.type]} gets trapped`);
+      headline = t(`${pname(trapped.piece.type, lang)}被困住`, `Your ${EN_PIECE[trapped.piece.type]} gets trapped`, `Pieza atrapada: ${pname(trapped.piece.type, lang)}`, `Peça presa: ${pname(trapped.piece.type, lang)}`);
       reasons.push(t(`走完這步，對手 ${nm(trapped.by, lang)} 之後，${whose(trapped.piece.square, trapped.piece.type, true, lang)}被困住：往哪走都會被吃。`,
-        `After ${nm(trapped.by, lang)}, ${whose(trapped.piece.square, trapped.piece.type, true, lang)} is trapped: every square it can go to loses it.`));
+        `After ${nm(trapped.by, lang)}, ${whose(trapped.piece.square, trapped.piece.type, true, lang)} is trapped: every square it can go to loses it.`, `Después de ${nm(trapped.by, lang)}, ${whose(trapped.piece.square, trapped.piece.type, true, lang)} queda atrapad${G(lang, trapped.piece.type)}: se pierde en cualquier casilla a la que vaya.`, `Depois de ${nm(trapped.by, lang)}, ${whose(trapped.piece.square, trapped.piece.type, true, lang)} fica pres${G(lang, trapped.piece.type)}: qualquer casa para onde vá leva à perda.`));
       squares.push([trapped.piece.square, 'threat']);
       const took = oppCaps.find((m) => m.captured === trapped.piece.type);
       if (took) reasons.push(capOf(took));
       facts.trapped = trapped.piece.square;
     } else if (saved && savedLost) {
       motif = 'ignored_threat';
-      headline = t('漏看對手的威脅', "Missed the opponent's threat");
+      headline = t('漏看對手的威脅', "Missed the opponent's threat", 'Amenaza sin atender', 'Ameaça ignorada');
       const b0 = new Chess(fenBefore);
       const atkNames = list(b0.attackers(saved.sq, opp(me)).map((sq) => whose(sq, b0.get(sq)!.type, false, lang)), lang);
       reasons.push(t(`走這步之前，${whose(saved.sq, saved.type, true, lang)}已經被${atkNames}攻擊，而且保護不夠。這步沒有處理它，幾步之後就被吃掉。`,
-        `Before this move, ${whose(saved.sq, saved.type, true, lang)} was already attacked by ${atkNames} and not defended enough. It was not addressed and gets taken a few moves later.`));
+        `Before this move, ${whose(saved.sq, saved.type, true, lang)} was already attacked by ${atkNames} and not defended enough. It was not addressed and gets taken a few moves later.`, `Antes de esta jugada, ${whose(saved.sq, saved.type, true, lang)} ya sufría el ataque de ${atkNames} y no tenía defensa suficiente. No se atendió y se pierde unas jugadas después.`, `Antes deste lance, ${whose(saved.sq, saved.type, true, lang)} já sofria o ataque de ${atkNames} e não tinha proteção suficiente. Isso não foi resolvido e a peça é capturada alguns lances depois.`));
       squares.push([saved.sq, 'threat']);
       const took = oppCaps.find((m) => m.captured === saved.type);
       if (took) reasons.push(capOf(took));
       facts.lostSquare = saved.sq;
     } else if (later) {
       motif = 'tactic';
-      headline = t(`對手有${TACTIC_META[later.tac!.tag].zh}`, `Allowed a ${TACTIC_META[later.tac!.tag].en.toLowerCase()}`);
+      headline = t(`對手有${TACTIC_META[later.tac!.tag].zh}`, `Allowed a ${TACTIC_META[later.tac!.tag].en.toLowerCase()}`, `Táctica permitida: ${tacticLabel(later.tac!.tag, lang)}`, `Tática permitida: ${tacticLabel(later.tac!.tag, lang)}`);
       reasons.push(t(`走完這步，對手可以走到 ${nm(later.m, lang)}，${tacticText(later.tac!, true, lang)}。`,
-        `After this, the opponent gets ${nm(later.m, lang)}, which ${tacticText(later.tac!, true, lang)}.`));
+        `After this, the opponent gets ${nm(later.m, lang)}, which ${tacticText(later.tac!, true, lang)}.`, `Después de esto, ${O.s}${O.v('tiene')} ${nm(later.m, lang)}, que ${tacticText(later.tac!, true, lang)}.`, `Depois disso, ${O.s}tem ${nm(later.m, lang)}, que ${tacticText(later.tac!, true, lang)}.`));
       facts.tactic = later.tac!.tag;
     } else {
       motif = 'lost_material';
-      headline = t('幾步之內會丟子', 'Loses material within a few moves');
+      headline = t('幾步之內會丟子', 'Loses material within a few moves', 'Pierde material en pocas jugadas', 'Perde material em poucos lances');
       const lostNames = list(oppCaps.length ? oppCaps.map((m) => whose(m.to, m.captured!, true, lang)) : [], lang);
       reasons.push(reply
         ? t(`走完這步，對手從 ${nm(reply, lang)} 開始一路逼${lostNames ? `，接連吃掉${lostNames}` : ''}。`,
-          `After this, the opponent starts with ${nm(reply, lang)} and keeps up the pressure${lostNames ? `, winning ${lostNames}` : ''}.`)
-        : t('走完這步，幾步之內會丟子。', 'This loses material within a few moves.'));
+          `After this, the opponent starts with ${nm(reply, lang)} and keeps up the pressure${lostNames ? `, winning ${lostNames}` : ''}.`, `Después de esto, ${O.s}${O.v('empieza')} con ${nm(reply, lang)} y ${O.v('mantiene')} la presión${lostNames ? `, ganando ${lostNames}` : ''}.`, `Depois disso, ${O.s}começa com ${nm(reply, lang)} e mantém a pressão${lostNames ? `, ganhando ${lostNames}` : ''}.`)
+        : t('走完這步，幾步之內會丟子。', 'This loses material within a few moves.', 'Con esta jugada se pierde material en pocas jugadas.', 'Com este lance, perde-se material em poucos lances.'));
     }
   };
 
   if (playedLine.mate === 'me' || record.blunderType === 'allowed_mate') {
     motif = 'allowed_mate';
-    headline = t('走完被將殺', 'Walked into mate');
+    headline = t('走完被將殺', 'Walked into mate', 'Mate permitido', 'Mate permitido');
     const n = playedLine.steps.filter((s) => !s.mine).length;
     reasons.push(playedLine.mate === 'me'
       ? t(`走完這步，對手有 ${n} 步殺：${playedLine.steps.slice(1).map((s) => s.san).join(' ')}。`,
-        `After this move the opponent mates in ${n}: ${playedLine.steps.slice(1).map((s) => s.san).join(' ')}.`)
-      : t('走完這步，對手有連續將軍的殺法。', 'After this move the opponent has a forced mate.'));
+        `After this move the opponent mates in ${n}: ${playedLine.steps.slice(1).map((s) => s.san).join(' ')}.`, `Después de esta jugada, ${O.s}${O.v('tiene')} mate en ${n}: ${playedLine.steps.slice(1).map((s) => s.san).join(' ')}.`, `Depois deste lance, ${O.s}tem mate em ${n}: ${playedLine.steps.slice(1).map((s) => s.san).join(' ')}.`)
+      : t('走完這步，對手有連續將軍的殺法。', 'After this move the opponent has a forced mate.', `Después de esta jugada, ${O.s}${O.v('tiene')} un mate forzado.`, `Depois deste lance, ${O.s}tem um mate forçado.`));
     if (reply) arrows.push([reply.from, reply.to, 'threat']);
     const k = after.board().flat().find((x) => x?.type === 'k' && x.color === me);
     if (k) squares.push([k.square, 'threat']);
     facts.mateLen = n;
   } else if (bestLine?.mate === 'opp' || record.blunderType === 'missed_mate') {
     motif = 'missed_mate';
-    headline = t('錯過將殺', 'Missed a mate');
+    headline = t('錯過將殺', 'Missed a mate', 'Mate perdido', 'Mate perdido');
     reasons.push(bestLine?.mate === 'opp'
-      ? t(`這裡有將殺：${bestLine.steps.map((s) => s.san).join(' ')}。`, `There was a mate here: ${bestLine.steps.map((s) => s.san).join(' ')}.`)
-      : t(`${best?.san ?? ''} 開始可以將死對手。`, `${best?.san ?? ''} starts a forced mate.`));
+      ? t(`這裡有將殺：${bestLine.steps.map((s) => s.san).join(' ')}。`, `There was a mate here: ${bestLine.steps.map((s) => s.san).join(' ')}.`, `Había un mate: ${bestLine.steps.map((s) => s.san).join(' ')}.`, `Havia um mate: ${bestLine.steps.map((s) => s.san).join(' ')}.`)
+      : t(`${best?.san ?? ''} 開始可以將死對手。`, `${best?.san ?? ''} starts a forced mate.`, `${best?.san ?? ''} inicia un mate forzado.`, `${best?.san ?? ''} inicia um mate forçado.`));
   } else if (losesMaterial && playedLine.net < 0 && !missedBigger) {
     // 找出真正造成損失的那一次吃子：跳過「我吃、他吃回來」的正常交換
     const k = lineMoves.findIndex((m, i) => m.color !== me && m.captured
@@ -515,8 +544,8 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
     const tradeAtStart = !!played.captured;
     if (replyTactic && !(reply?.captured)) {
       motif = 'tactic';
-      headline = t(`對手有${TACTIC_META[replyTactic.tag].zh}`, `Allowed a ${TACTIC_META[replyTactic.tag].en.toLowerCase()}`);
-      reasons.push(t(`走完這步，對手 ${reply!.san} ${tacticText(replyTactic, true, lang)}。`, `After this, ${reply!.san} ${tacticText(replyTactic, true, lang)}.`));
+      headline = t(`對手有${TACTIC_META[replyTactic.tag].zh}`, `Allowed a ${TACTIC_META[replyTactic.tag].en.toLowerCase()}`, `Táctica permitida: ${tacticLabel(replyTactic.tag, lang)}`, `Tática permitida: ${tacticLabel(replyTactic.tag, lang)}`);
+      reasons.push(t(`走完這步，對手 ${reply!.san} ${tacticText(replyTactic, true, lang)}。`, `After this, ${reply!.san} ${tacticText(replyTactic, true, lang)}.`, `Después de esto, ${reply!.san} ${tacticText(replyTactic, true, lang)}.`, `Depois disso, ${reply!.san} ${tacticText(replyTactic, true, lang)}.`));
       arrows.push([reply!.from, reply!.to, 'threat']);
       for (const p of replyTactic.pieces) squares.push([p.square, 'threat']);
       facts.tactic = replyTactic.tag;
@@ -534,22 +563,22 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
       facts.attackers = atk.length; facts.defenders = def.length;
       if (tradeAtStart) {
         motif = 'bad_exchange';
-        headline = t('兌換算錯', 'Bad trade');
+        headline = t('兌換算錯', 'Bad trade', 'Mal cambio', 'Troca ruim');
         reasons.push(t(`你用${pname(played.piece, lang)}吃了${whose(played.to, played.captured!, false, lang)}，但 ${played.to} 被${atkNames}守著。`,
-          `You took ${whose(played.to, played.captured!, false, lang)} with your ${EN_PIECE[played.piece]}, but ${played.to} is covered by ${atkNames}.`));
+          `You took ${whose(played.to, played.captured!, false, lang)} with your ${EN_PIECE[played.piece]}, but ${played.to} is covered by ${atkNames}.`, `${M.you ? 'Capturaste' : 'El rival capturó'} ${whose(played.to, played.captured!, false, lang)} con ${M.own(played.piece)}, pero ${played.to} está cubierta por ${atkNames}.`, `${capital(M.s)}capturou ${whose(played.to, played.captured!, false, lang)} com ${M.own(played.piece)}, mas ${played.to} está coberta por ${atkNames}.`));
       } else {
         motif = 'hanging';
-        headline = t(`送子：${played.to} 的${pname(played.piece, lang)}`, `Hung the ${EN_PIECE[played.piece]} on ${played.to}`);
+        headline = t(`送子：${played.to} 的${pname(played.piece, lang)}`, `Hung the ${EN_PIECE[played.piece]} on ${played.to}`, `Pieza regalada: ${pname(played.piece, lang)} en ${played.to}`, `Peça largada: ${pname(played.piece, lang)} em ${played.to}`);
         reasons.push(t(`你把${pname(played.piece, lang)}走到 ${played.to}，這格被${atkNames}攻擊。`,
-          `You moved your ${EN_PIECE[played.piece]} to ${played.to}, where ${atkNames} can take it.`));
+          `You moved your ${EN_PIECE[played.piece]} to ${played.to}, where ${atkNames} can take it.`, `${M.you ? 'Moviste' : 'El rival movió'} ${M.own(played.piece)} a ${played.to}, una casilla atacada por ${atkNames}.`, `${capital(M.s)}moveu ${M.own(played.piece)} para ${played.to}, uma casa atacada por ${atkNames}.`));
       }
       reasons.push(def.length === 0
-        ? t(`${played.to} 沒有任何你的子保護，對手 ${nm(c, lang)} 白吃。`, `Nothing of yours protects ${played.to}, so ${nm(c, lang)} wins it for free.`)
+        ? t(`${played.to} 沒有任何你的子保護，對手 ${nm(c, lang)} 白吃。`, `Nothing of yours protects ${played.to}, so ${nm(c, lang)} wins it for free.`, `${M.you ? 'Ninguna pieza tuya protege' : 'Ninguna pieza del rival protege'} ${played.to}, así que ${nm(c, lang)} gana material gratis.`, `${M.you ? 'Nenhuma peça sua protege' : 'Nenhuma peça do adversário protege'} ${played.to}, então ${nm(c, lang)} ganha material de graça.`)
         : cheap.length
           ? t(`雖然有保護，但對手用比它便宜的${pname(cheap[0].type, lang)}吃，換下來還是你虧。`,
-            `It is protected, but the opponent takes with a cheaper ${EN_PIECE[cheap[0].type]}, so the trade still costs you.`)
+            `It is protected, but the opponent takes with a cheaper ${EN_PIECE[cheap[0].type]}, so the trade still costs you.`, `Tiene defensa, pero ${O.noun} ${O.v('captura')} con ${INDEF(lang, cheap[0].type)} de menor valor, y el cambio sigue saliendo caro ${M.you ? 'para ti' : 'para el rival'}.`, `Tem proteção, mas ${O.noun} captura com ${INDEF(lang, cheap[0].type)} de menor valor, e a troca ainda sai cara ${M.you ? 'para você' : 'para o adversário'}.`)
           : t(`攻擊 ${atk.length} 個、保護 ${def.length} 個，吃來吃去最後是你吃虧。`,
-            `${atk.length} attacker(s) against ${def.length} defender(s): the exchanges end in the opponent's favor.`));
+            `${atk.length} attacker(s) against ${def.length} defender(s): the exchanges end in the opponent's favor.`, `${atk.length} ${atk.length === 1 ? 'atacante' : 'atacantes'} contra ${def.length} ${def.length === 1 ? 'defensor' : 'defensores'}: los cambios acaban a favor ${O.you ? 'tuyo' : 'del rival'}.`, `${atk.length} ${atk.length === 1 ? 'atacante' : 'atacantes'} contra ${def.length} ${def.length === 1 ? 'defensor' : 'defensores'}: as trocas terminam ${O.you ? 'a seu favor' : 'a favor do adversário'}.`));
     } else if (c) {
       // 對手吃掉我別的子：找出為什麼那個子會沒人顧
       const xName = whose(c.to, c.captured!, true, lang);
@@ -561,23 +590,23 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
       arrows.push([c.from, c.to, 'threat']);
       if (k === 1 && guardedBefore && !guardedAfter) {
         motif = 'left_undefended';
-        headline = t('保護被移開', 'Removed a defender');
+        headline = t('保護被移開', 'Removed a defender', 'Se quitó la protección', 'Proteção removida');
         reasons.push(t(`你的${pname(played.piece, lang)}原本在保護${xName}，走到 ${played.to} 之後，${xName}就沒人顧了。`,
-          `Your ${EN_PIECE[played.piece]} was protecting ${xName}. After moving to ${played.to}, it no longer does.`));
+          `Your ${EN_PIECE[played.piece]} was protecting ${xName}. After moving to ${played.to}, it no longer does.`, `${capital(M.own(played.piece))} protegía ${xName}. Al moverse a ${played.to}, ya no lo hace.`, `${capital(M.own(played.piece))} protegia ${xName}. Ao ir para ${played.to}, deixa de fazer isso.`));
         arrows.push([played.from, c.to, 'defend']);
         reasons.push(caption(c.before, c, me, lang) + t('。', '.'));
       } else if (k === 1 && between(c.from, c.to).includes(played.from as Square)) {
         motif = 'opened_line';
-        headline = t('讓出了攻擊線', 'Opened a line for the opponent');
+        headline = t('讓出了攻擊線', 'Opened a line for the opponent', 'Línea de ataque abierta', 'Linha de ataque aberta');
         reasons.push(t(`你的${pname(played.piece, lang)}原本擋在 ${played.from}，移開之後，對手的${pname(c.piece, lang)}可以直接打到${xName}。`,
-          `Your ${EN_PIECE[played.piece]} was blocking on ${played.from}. Moving it lets the opponent reach ${xName}.`));
+          `Your ${EN_PIECE[played.piece]} was blocking on ${played.from}. Moving it lets the opponent reach ${xName}.`, `${capital(M.own(played.piece))} estaba bloqueando en ${played.from}. Al moverse, ${O.noun} ${O.v('puede')} llegar hasta ${xName}.`, `${capital(M.own(played.piece))} estava bloqueando em ${played.from}. Ao se mover, ${O.noun} pode alcançar ${xName}.`));
         reasons.push(caption(c.before, c, me, lang) + t('。', '.'));
       } else if (k === 1 && same && looseOn(board, c.to, c.captured!, me)) {
         motif = 'ignored_threat';
-        headline = t('漏看對手的威脅', "Missed the opponent's threat");
+        headline = t('漏看對手的威脅', "Missed the opponent's threat", 'Amenaza sin atender', 'Ameaça ignorada');
         const atkNames = list(board.attackers(c.to, opp(me)).map((sq) => whose(sq, board.get(sq)!.type, false, lang)), lang);
         reasons.push(t(`走這步之前，${xName}已經被${atkNames}攻擊，而且保護不夠。這步沒有處理它。`,
-          `Before this move, ${xName} was already attacked by ${atkNames} and not defended enough. This move did nothing about it.`));
+          `Before this move, ${xName} was already attacked by ${atkNames} and not defended enough. This move did nothing about it.`, `Antes de esta jugada, ${xName} ya sufría el ataque de ${atkNames} y no tenía defensa suficiente. Esta jugada no hizo nada al respecto.`, `Antes deste lance, ${xName} já sofria o ataque de ${atkNames} e não tinha proteção suficiente. Este lance não resolveu isso.`));
         reasons.push(caption(c.before, c, me, lang) + t('。', '.'));
       } else {
         diagnoseLater();
@@ -594,15 +623,15 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
     const bestTac = moveTactics(fenBefore, best.lan, me).find((x) => x.side === 'chance' && ['fork', 'pawn_fork', 'pin', 'skewer', 'discovered'].includes(x.tag));
     if (best.captured && board.attackers(best.to, opp(me)).length === 0 && VALUE[best.captured] >= 3 && bestLine.net > 0) {
       motif = 'missed_free';
-      headline = t(`錯過白吃的${pname(best.captured, lang)}`, `Missed a free ${EN_PIECE[best.captured]}`);
+      headline = t(`錯過白吃的${pname(best.captured, lang)}`, `Missed a free ${EN_PIECE[best.captured]}`, `Oportunidad perdida: ${pname(best.captured, lang)} gratis`, `Oportunidade perdida: ${pname(best.captured, lang)} de graça`);
       squares.push([best.to, 'best']);
     } else if (bestTac && gap >= 2) {
       motif = 'missed_tactic';
-      headline = t(`錯過${TACTIC_META[bestTac.tag].zh}`, `Missed a ${TACTIC_META[bestTac.tag].en.toLowerCase()}`);
+      headline = t(`錯過${TACTIC_META[bestTac.tag].zh}`, `Missed a ${TACTIC_META[bestTac.tag].en.toLowerCase()}`, `Oportunidad perdida: ${tacticLabel(bestTac.tag, lang)}`, `Oportunidade perdida: ${tacticLabel(bestTac.tag, lang)}`);
       for (const p of bestTac.pieces) squares.push([p.square, 'best']);
     } else if (gap >= 2) {
       motif = 'missed_material';
-      headline = t('錯過得子的機會', 'Missed a chance to win material');
+      headline = t('錯過得子的機會', 'Missed a chance to win material', 'Oportunidad perdida de ganar material', 'Oportunidade perdida de ganhar material');
     }
   }
   // 錯過的比較大，但這步本身也會丟子：補一句後面的戰術
@@ -612,7 +641,7 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
       .find((x) => x.tac);
     if (later) {
       reasons.push(t(`而且走完這步，對手可以走到 ${nm(later.m, lang)}，${tacticText(later.tac!, true, lang)}。`,
-        `On top of that, the opponent gets ${nm(later.m, lang)}, which ${tacticText(later.tac!, true, lang)}.`));
+        `On top of that, the opponent gets ${nm(later.m, lang)}, which ${tacticText(later.tac!, true, lang)}.`, `Además, después de esta jugada, ${O.s}${O.v('tiene')} ${nm(later.m, lang)}, que ${tacticText(later.tac!, true, lang)}.`, `Além disso, depois deste lance, ${O.s}tem ${nm(later.m, lang)}, que ${tacticText(later.tac!, true, lang)}.`));
     }
   }
   if (motif === 'positional' && reply) {
@@ -621,26 +650,26 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
       && (VALUE[l.target.type] > VALUE[reply.piece] || new Chess(reply.after).attackers(l.to, me).length === 0))[0];
     if (replyTactic || hit || rel.threats.some((x) => x.kind === 'mate') || new Chess(reply.after).isCheck()) {
       motif = 'allowed_threat';
-      headline = t('讓對手有威脅', 'Gave the opponent a threat');
-      const cap = caption(played.after, reply, me, lang);
+      headline = t('讓對手有威脅', 'Gave the opponent a threat', 'Amenaza permitida', 'Ameaça permitida');
+      const cap = caption(played.after, reply, me, lang, false);
       const mateThreat = rel.threats.find((x) => x.kind === 'mate');
       const extra = mateThreat
-        ? t(`，準備 ${nm(mateThreat, lang)} 將死`, `, threatening ${nm(mateThreat, lang)} mate`)
+        ? t(`，準備 ${nm(mateThreat, lang)} 將死`, `, threatening ${nm(mateThreat, lang)} mate`, `, con la amenaza de mate ${nm(mateThreat, lang)}`, `, com ameaça de mate ${nm(mateThreat, lang)}`)
         : hit && !cap.includes(hit.to)
-          ? t(`，接著攻擊${whose(hit.to, hit.target.type, true, lang)}`, `, then attacks ${whose(hit.to, hit.target.type, true, lang)}`) : '';
-      reasons.push(t(`走完這步，對手最強的應手是 ${cap}${extra}。`, `After this, the opponent's strongest reply is ${cap}${extra}.`));
+          ? t(`，接著攻擊${whose(hit.to, hit.target.type, true, lang)}`, `, then attacks ${whose(hit.to, hit.target.type, true, lang)}`, `, y luego ataca ${whose(hit.to, hit.target.type, true, lang)}`, `, e depois ataca ${whose(hit.to, hit.target.type, true, lang)}`) : '';
+      reasons.push(t(`走完這步，對手最強的應手是 ${cap}${extra}。`, `After this, the opponent's strongest reply is ${cap}${extra}.`, `Después de esto, la mejor respuesta ${O.you ? 'tuya' : 'del rival'} es ${cap}${extra}.`, `Depois disso, a melhor resposta ${O.you ? 'sua' : 'do adversário'} é ${cap}${extra}.`));
       if (hit) squares.push([hit.to, 'threat']);
       arrows.push([reply.from, reply.to, 'threat']);
     }
   }
   if (motif === 'positional') {
-    reasons.push(t('這步沒有馬上丟子，但讓局面明顯變差。', 'This move does not lose material right away, but the position gets clearly worse.'));
-    if (reply) reasons.push(t(`對手最強的應手是 ${caption(played.after, reply, me, lang)}。`, `The opponent's strongest reply: ${caption(played.after, reply, me, lang)}.`));
+    reasons.push(t('這步沒有馬上丟子，但讓局面明顯變差。', 'This move does not lose material right away, but the position gets clearly worse.', 'Esta jugada no pierde material de inmediato, pero la posición empeora claramente.', 'Este lance não perde material de imediato, mas a posição piora claramente.'));
+    if (reply) reasons.push(t(`對手最強的應手是 ${caption(played.after, reply, me, lang, false)}。`, `The opponent's strongest reply: ${caption(played.after, reply, me, lang, false)}.`, `Mejor respuesta ${O.you ? 'tuya' : 'del rival'}: ${caption(played.after, reply, me, lang, false)}.`, `Melhor resposta ${O.you ? 'sua' : 'do adversário'}: ${caption(played.after, reply, me, lang, false)}.`));
   }
   if (playedLine.net >= 0 && !playedLine.mate) {
     // 走差了但子力沒吃虧：問題不在子力，別讓子力帳看起來像是賺了
     playedLine.outcome = t(`子力沒有吃虧，但評分從 ${sBefore} 掉到 ${sAfter}。`,
-      `No material lost, but the score drops from ${sBefore} to ${sAfter}.`);
+      `No material lost, but the score drops from ${sBefore} to ${sAfter}.`, `No se pierde material, pero la evaluación baja de ${sBefore} a ${sAfter}.`, `Não se perde material, mas a avaliação cai de ${sBefore} para ${sAfter}.`);
     // 結論已經講了評分掉多少，補充說明不用再講一次
     playedLine.note = undefined;
   }
@@ -648,11 +677,11 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
   const missed = ['missed_free', 'missed_tactic', 'missed_material'].includes(motif);
   const br = bestReason();
   // bestReason 多半以「Qb4+（后 e7→b4）…」開頭，就不再重複代號
-  if (missed && br) reasons.unshift(br.startsWith(best!.san) ? t('該走 ', 'The move was ') + br : t(`該走 ${nm(best, lang)}：`, `The move was ${nm(best, lang)}: `) + br);
+  if (missed && br) reasons.unshift(br.startsWith(best!.san) ? t('該走 ', 'The move was ', 'Lo mejor era ', 'O melhor era ') + br : t(`該走 ${nm(best, lang)}：`, `The move was ${nm(best, lang)}: `, `Lo mejor era ${nm(best, lang)}: `, `O melhor era ${nm(best, lang)}: `) + br);
   if (playedLine.steps.length > 1 && playedLine.net < 0 && motif !== 'allowed_mate') {
-    reasons.push(t(`照引擎的變化走下去：${playedLine.outcome}`, `Following the engine's line: ${playedLine.outcome}`));
+    reasons.push(t(`照引擎的變化走下去：${playedLine.outcome}`, `Following the engine's line: ${playedLine.outcome}`, `Siguiendo la línea del motor: ${playedLine.outcome}`, `Seguindo a linha do motor: ${playedLine.outcome}`));
   }
-  if (br && !missed) reasons.push(t(`比較好的是 ${best!.san}：`, `Better was ${best!.san}: `) + br);
+  if (br && !missed) reasons.push(t(`比較好的是 ${best!.san}：`, `Better was ${best!.san}: `, `Mejor era ${best!.san}: `, `Melhor era ${best!.san}: `) + br);
   if (best && best.san !== played.san) arrows.push([best.from, best.to, 'best']);
   reasons.push(drop);
 
@@ -668,6 +697,7 @@ export function explainMove(fenBefore: string, san: string, record: MoveRecord, 
  * 用對手的角度產生，再把「你／對手」對調，讀起來就是「對手錯在哪、你可以怎麼懲罰」。
  */
 export function swapVoice(e: Explanation, lang: Lang): Explanation {
+  if (isRomance(lang)) return e.swapped ? e.swapped() : e;
   const sw = lang !== 'zh'
     ? (s: string) => s
       .replace(/\bthe opponent's\b/g, '\u0001').replace(/\bThe opponent's\b/g, '\u0002')

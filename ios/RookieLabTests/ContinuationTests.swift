@@ -29,8 +29,8 @@ final class ExplainJSTests: XCTestCase {
     let e = try XCTUnwrap(ExplainJS.explain(key: "t-f6", record: r, ply: p, before: before, after: after))
     XCTAssertFalse(e.headline.isEmpty)
     XCTAssertFalse(e.plainReasons.isEmpty)
-    XCTAssertFalse(e.plainReasons.contains { $0.contains("勝率") || $0.contains("評分") }, "不講勝率、評分數字")
-    XCTAssertEqual(ExplainJS.plain("子力沒有吃虧，但評分從 -0.4 掉到 -1.6。"), "子力沒有吃虧，但局面從均勢變成小劣。")
+    XCTAssertFalse(e.plainReasons.contains { $0.contains("勝率") || $0.contains("評分") || $0.contains("Score ") }, "不講勝率、評分數字")
+    if AppLang.isZh { XCTAssertEqual(ExplainJS.plain("子力沒有吃虧，但評分從 -0.4 掉到 -1.6。"), "子力沒有吃虧，但局面從均勢變成小劣。") }
     XCTAssertTrue(e.lines.contains { $0.kind == "played" })
     // 這步當成對手走的：說明要從使用者的角度講（「你」「對手」對調）
     let opp = try XCTUnwrap(ExplainJS.explain(key: "t-f6", record: r, ply: p, before: before, after: after, opponent: true))

@@ -33,7 +33,7 @@ fi
 echo "▶ 建置（Release，Team ${TEAM}）"
 xcodebuild -project RookieLab.xcodeproj -scheme RookieLab -configuration Release \
   -destination "${DEVICE:+id=$DEVICE}" \
-  -derivedDataPath build -allowProvisioningUpdates -allowProvisioningDeviceRegistration DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic BUNDLE_BASE="$BUNDLE_ID" -quiet build \
+  -derivedDataPath build -allowProvisioningUpdates -allowProvisioningDeviceRegistration DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic BUNDLE_BASE="$BUNDLE_ID" SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) DEVINSTALL' -quiet build \
   || { echo "簽名失敗多半是 Xcode 沒登入：Xcode → Settings → Accounts → + 登入 Apple ID。"; exit 1; }
 
 APP=build/Build/Products/Release-iphoneos/RookieLab.app

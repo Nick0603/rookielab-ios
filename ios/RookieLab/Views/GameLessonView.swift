@@ -4,7 +4,7 @@ import SwiftUI
 struct GameHighlight: Identifiable {
   enum Kind {
     case good, missed, mistake
-    var zh: String { self == .good ? "好棋" : self == .missed ? "錯失的機會" : "失誤" }
+    var zh: String { self == .good ? String(localized: "好棋") : self == .missed ? String(localized: "錯失的機會") : String(localized: "失誤") }
     var icon: String { self == .good ? "trophy.fill" : self == .missed ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill" }
     var color: Color { self == .good ? Color(hex: 0x1BACA6) : self == .missed ? Brand.orange : Color(hex: 0xD64545) }
   }
@@ -70,20 +70,33 @@ struct GameHighlight: Identifiable {
       h.headline = e?.headline
       h.reason = h.steps.first.flatMap { $0.caption.isEmpty ? nil : $0.caption } ?? e?.plainReasons.first
       let pun = r.cls == .best || r.cls == .excellent
-      h.praise = pun ? "抓到了！對手剛走錯，你用 \(r.san) 抓住了機會" : "好棋！\(r.san)"
+      h.praise = pun ? String(localized: "抓到了！對手剛走錯，你用 \(r.san) 抓住了機會") : String(localized: "好棋！\(r.san)")
       if kind == .good { h.reason = e?.plainReasons.first ?? e?.headline }
-      let names = ["K": "王", "Q": "后", "R": "車", "B": "象", "N": "馬", "P": "兵"]
       if let u = h.steps.first?.uci, let code = FEN.pieces(p.fenBefore)[String(u.prefix(2))] {
-        h.hint = "提示：動 \(u.prefix(2)) 的\(names[String(code.last!)] ?? "子")"
+        h.hint = String(localized: "提示：動 \(String(u.prefix(2))) 的\(Explain.pieceName(String(code.last!).lowercased()))")
       }
       return h
   }
 
   /// 錯失的是哪一類機會：「錯過捉雙」→「捉雙」、「錯過白吃的馬」→「白吃的馬」、「錯過得子的機會」→「得子」
   var chanceType: String? {
-    guard kind == .missed, let h = headline, h.hasPrefix("錯過") else { return nil }
-    var t = String(h.dropFirst(2))
-    if t.hasSuffix("的機會") { t.removeLast(3) }
+    guard kind == .missed, let h = headline else { return nil }
+    var t: String
+    if h.hasPrefix("錯過") {
+      t = String(h.dropFirst(2))
+      if t.hasSuffix("的機會") { t.removeLast(3) }
+    } else if h.hasPrefix("Missed ") {
+      t = String(h.dropFirst(7))
+      for art in ["a ", "an "] where t.hasPrefix(art) { t = String(t.dropFirst(art.count)) }
+      if t.hasPrefix("chance") { return nil }
+    } else if let p = ["Oportunidad perdida: ", "Oportunidade perdida: "].first(where: { h.hasPrefix($0) }) {
+      // 西文、葡文：「Oportunidad perdida: horquilla」；「…de ganar material」這種籠統的不標
+      t = String(h.dropFirst(p.count))
+    } else if h == "Mate perdido" {
+      t = "Mate"
+    } else {
+      return nil
+    }
     return t.isEmpty ? nil : t
   }
 
@@ -191,12 +204,15 @@ final class QuickReview {
     if let k = notice {
       let p = line.plies[k]
       var out = [arrow(p.uci, Color.red.opacity(0.85))]
-      if let u = (evals[safe: k + 1] ?? nil)?.first?.best { out.append(arrow(u, p.mover == me ? Brand.orange : Brand.bestArrow)) }
+      // 下一步就要你自己找：不先畫出最佳步（不然答案就洩露了）
+      if !askNext(after: k), let u = (evals[safe: k + 1] ?? nil)?.first?.best { out.append(arrow(u, p.mover == me ? Brand.orange : Brand.bestArrow)) }
       return out
     }
     guard phase == .revealed || phase == .solved, alt == nil, let u = current?.steps.first?.uci else { return [] }
     return [Arrow(from: String(u.prefix(2)), to: String(u.dropFirst(2).prefix(2)), color: Brand.bestArrow)]
   }
+  /// 第 k 手之後緊接著就是要你找最佳步的重點
+  private func askNext(after k: Int) -> Bool { current.map { $0.interactive && $0.record.ply == k + 1 } ?? false }
   private func arrow(_ u: String, _ c: Color) -> Arrow { Arrow(from: String(u.prefix(2)), to: String(u.dropFirst(2).prefix(2)), color: c) }
 
   var squares: [String] { last.map { [$0.from, $0.to] } ?? [] }
@@ -205,40 +221,50 @@ final class QuickReview {
   /// 看完了、而且是對手投降：棋盤上舉白旗
   var resigned = false
 
+  private static func scoreText(_ head: String, score: String, delta: String?) -> String {
+    let base = String(localized: "\(head)・分數 \(score)")
+    return delta.map { base + String(localized: "（\($0)）") } ?? base
+  }
+
   /// 教練這時候說的話：（表情、標題、一句說明）—都是先算好的字串
   var say: (mood: String, title: String, detail: String?) {
     if let k = notice, let n = notes[safe: k] ?? nil {
       let p = line.plies[k], mine = p.mover == me
-      return (mine ? "sad" : "point", mine ? "你 \(p.san)：\(n.cls.zh)" : "對手 \(p.san)：\(n.cls.zh)，你的機會來了",
-              "\(n.tag)・分數 \(n.score)" + (n.delta.map { "（\($0)）" } ?? "") + (mine ? "\n橘色箭頭是對手接下來的好棋" : "\n綠色箭頭是你可以抓的機會"))
+      let title = mine ? String(localized: "你 \(p.san)：\(n.cls.zh)") : String(localized: "對手 \(p.san)：\(n.cls.zh)，你的機會來了")
+      let arrow = mine ? String(localized: "橘色箭頭是對手接下來的好棋") : String(localized: "綠色箭頭是你可以抓的機會")
+      // 下一步要你自己找：不提箭頭（沒有畫），標籤也只說評級——解說的標題像「送子：e5 的馬」會直接講出要吃哪裡
+      let ask = askNext(after: k)
+      let score = Self.scoreText(ask ? n.cls.zh : n.tag, score: n.score, delta: n.delta)
+      return (mine ? "sad" : "point", title, ask ? score : score + "\n" + arrow)
     }
     if let t = toast {
       let n = notes[safe: t.record.ply] ?? nil
-      let change = n.map { "\($0.tag)・分數 \($0.score)" + ($0.delta.map { "（\($0)）" } ?? "") }
-      return ("happy", t.praise ?? "好棋！", [t.reason, change].compactMap { $0 }.joined(separator: "\n"))
+      let change = n.map { Self.scoreText($0.tag, score: $0.score, delta: $0.delta) }
+      return ("happy", t.praise ?? String(localized: "好棋！"), [t.reason, change].compactMap { $0 }.joined(separator: "\n"))
     }
     if phase == .playing {
-      guard let l = lastNote else { return ("think", "快速播放中…", "停在重點分析") }
-      let who = l.ply.mover == me ? "你" : "對手"
-      return (l.ply.mover == me && l.note.cls.isBad ? "sad" : "think", "\(who) \(l.ply.san)：\(l.note.tag)",
-              "\(l.note.cls.zh)・分數 \(l.note.score)" + (l.note.delta.map { "（\($0)）" } ?? ""))
+      guard let l = lastNote else { return ("think", String(localized: "快速播放中…"), String(localized: "停在重點分析")) }
+      let title = l.ply.mover == me ? String(localized: "你 \(l.ply.san)：\(l.note.tag)") : String(localized: "對手 \(l.ply.san)：\(l.note.tag)")
+      return (l.ply.mover == me && l.note.cls.isBad ? "sad" : "think", title,
+              Self.scoreText(l.note.cls.zh, score: l.note.score, delta: l.note.delta))
     }
-    guard let h = current, phase != .done else { return ("cheer", "這局看完了", nil) }
+    guard let h = current, phase != .done else { return ("cheer", String(localized: "這局看完了"), nil) }
     switch phase {
-    case .playing, .praise, .done: return ("cheer", "這局看完了", nil)
+    case .playing, .praise, .done: return ("cheer", String(localized: "這局看完了"), nil)
     case .trying:
       if wrongs > 0 {
         if let r = refute {
-          return ("sad", "不是這步：對手會走 \(r.san)", "\(r.tag)" + (r.score.map { "・分數變成 \($0)" } ?? "") + (busy ? "" : "。再試一次") + (hint ? "\n\(h.hint)" : ""))
+          let detail = r.tag + (r.score.map { String(localized: "・分數變成 \($0)") } ?? "") + (busy ? "" : String(localized: "。再試一次")) + (hint ? "\n\(h.hint)" : "")
+          return ("sad", String(localized: "不是這步：對手會走 \(r.san)"), detail)
         }
-        return ("sad", busy ? "看看對手會怎麼走…" : "不是這步，再想想", hint ? h.hint : nil)
+        return ("sad", busy ? String(localized: "看看對手會怎麼走…") : String(localized: "不是這步，再想想"), hint ? h.hint : nil)
       }
-      let prev = pos > 0 ? "對手剛走了 \(line.plies[pos - 1].san)" : nil
-      let lead = h.chanceType.map { "這裡有個「\($0)」的機會！" } ?? (h.kind == .missed ? "這裡有個機會！" : "這一步要小心。")
-      return ("think", lead + "找出最好的一步",
+      let prev = pos > 0 ? String(localized: "對手剛走了 \(line.plies[pos - 1].san)") : nil
+      let lead = h.chanceType.map { String(localized: "這裡有個「\($0)」的機會！") } ?? (h.kind == .missed ? String(localized: "這裡有個機會！") : String(localized: "這一步要小心。"))
+      return ("think", String(localized: "\(lead)找出最好的一步"),
               hint ? h.hint : [prev, h.headline].compactMap { $0 }.joined(separator: "・"))
-    case .solved: return ("cheer", alt.map { "\($0) 也可以！" } ?? "就是這步！\(h.bestSan)", h.reason)
-    case .revealed: return ("point", "更好的一步是 \(h.bestSan)", h.reason)
+    case .solved: return ("cheer", alt.map { String(localized: "\($0) 也可以！") } ?? String(localized: "就是這步！\(h.bestSan)"), h.reason)
+    case .revealed: return ("point", String(localized: "更好的一步是 \(h.bestSan)"), h.reason)
     }
   }
 
@@ -478,7 +504,7 @@ struct QuickPanel: View {
             Image(systemName: x.kind.icon).foregroundStyle(x.kind.color)
             Text("第 \(x.ply.moveNumber) 手・\(x.kind.zh)").font(.subheadline).foregroundStyle(Brand.ink)
             Spacer()
-            Text(x.interactive ? (q.results[x.id] == true ? "找到了" : "答案 \(x.bestSan)") : x.record.san)
+            Text(x.interactive ? (q.results[x.id] == true ? String(localized: "找到了") : String(localized: "答案 \(x.bestSan)")) : x.record.san)
               .font(.caption.weight(.semibold)).foregroundStyle(q.results[x.id] == true ? .green : .secondary)
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
           }

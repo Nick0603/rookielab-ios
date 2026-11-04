@@ -11,7 +11,7 @@ final class ReviewModel {
   private(set) var records: [MoveRecord?]
   private(set) var evals: [[EngineLine]?]
   private(set) var progress = 0.0
-  private(set) var status: String = "準備中…"
+  private(set) var status: String = String(localized: "準備中…")
   var current = 0 {
     didSet {
       guard current != oldValue, !following else { return }
@@ -56,7 +56,7 @@ final class ReviewModel {
   enum Mode: String, CaseIterable, Identifiable {
     case quick, step, free
     var id: String { rawValue }
-    var zh: String { self == .quick ? "快速重點" : self == .step ? "逐步分析" : "自由分析" }
+    var zh: String { self == .quick ? String(localized: "快速重點") : self == .step ? String(localized: "逐步分析") : String(localized: "自由分析") }
     /// 自動播放每一手隔多久
     var interval: UInt64 { self == .quick ? 350_000_000 : 1_100_000_000 }
   }
@@ -125,10 +125,10 @@ final class ReviewModel {
     analyzeTask = Task { [weak self] in
       guard let self else { return }
       do {
-        if !StockfishService.netsReady { self.status = "第一次使用：下載引擎評估檔（約 80MB）…" }
+        if !StockfishService.netsReady { self.status = String(localized: "第一次使用：下載引擎評估檔（約 80MB）…") }
         try await StockfishService.shared.start()
       } catch {
-        self.status = "引擎啟動失敗，請檢查網路後重試"
+        self.status = String(localized: "引擎啟動失敗，請檢查網路後重試")
         return
       }
       let n = line.plies.count
@@ -141,7 +141,7 @@ final class ReviewModel {
         self.evals = e
         self.records = r
         self.progress = Double(k) / Double(max(n, 1))
-        self.status = k < n ? "分析中 \(k)/\(n)" : ""
+        self.status = k < n ? String(localized: "分析中 \(k)/\(n)") : ""
         // 跟著播用固定節奏（followPacer），不跟分析的速度：分析快的地方不會一下跳好幾步、精算時也不會停住
         self.analyzed = max(self.analyzed, k)
       }
@@ -154,6 +154,7 @@ final class ReviewModel {
       }
       // 剛分析完：記一筆、失誤加進複習、跳出「這局最該記住的一件事」
       if let a = AnalysisStore.load(self.game.id), let d = GameDigest(game: self.game, line: line, analysis: a) {
+        await d.prefetchExplanations()
         self.added = AutoAnalyzer.shared.record(d)
         self.lesson = Lesson(d)
         // 分析完直接停在「一件事」那一步，不跳回開頭
@@ -175,14 +176,15 @@ final class ReviewModel {
   }
 
   /// 畫面上會顯示解說的步（雙方的關鍵步、不精確）全部先算好：滑棋譜、播放時不用當場算。
-  /// 一次算一個就讓出主執行緒，載入動畫不會停
+  /// 解說在自己的執行緒上算，主執行緒只畫載入動畫；progress：準備解說做到哪裡（0...1）
+  private(set) var prepProgress = 0.0
+
   func warmExplanations() async {
     guard let line else { return }
-    for r in records.compactMap({ $0 }) where r.cls.isKey || r.cls == .inaccuracy {
-      if Task.isCancelled { return }
-      _ = ExplainJS.explain(key: key(r.ply), record: r, ply: line.plies[r.ply], before: evals[r.ply] ?? nil, after: evals[r.ply + 1] ?? nil, opponent: r.mover != me)
-      await Task.yield()
+    let list = records.compactMap { $0 }.filter { $0.cls.isKey || $0.cls == .inaccuracy }.compactMap { r in
+      ExplainJS.request(key: key(r.ply), record: r, ply: line.plies[r.ply], before: evals[r.ply] ?? nil, after: evals[r.ply + 1] ?? nil, opponent: r.mover != me)
     }
+    await ExplainJS.prefetch(list) { [weak self] v in self?.prepProgress = v }
   }
 
   func key(_ ply: Int) -> String { "\(game.id)-\(ply)" }
@@ -327,18 +329,18 @@ final class ReviewModel {
     let js = Dictionary((e?.lines ?? []).compactMap { l in LineOption(l, base: ply).map { (l.kind, $0) } }, uniquingKeysWith: { a, _ in a })
     var out: [Candidate] = []
     let bestLine = before?.first
-    if let o = js["best"].map({ trim($0, id: "best", title: "最佳") }) ?? engine(bestLine, id: "best", title: "最佳") {
-      out.append(Candidate(kind: .best, option: o, verdict: "走完局面\(Grading.standing(Grading.winProb(bestLine)))"))
+    if let o = js["best"].map({ trim($0, id: "best", title: String(localized: "最佳")) }) ?? engine(bestLine, id: "best", title: String(localized: "最佳")) {
+      out.append(Candidate(kind: .best, option: o, verdict: String(localized: "走完局面\(Grading.standing(Grading.winProb(bestLine)))")))
     }
-    if let alt = before.flatMap({ Grading.secondChoice($0) }), alt.best != r.uci, let o = engine(alt, id: "alt", title: "也不錯") {
-      out.append(Candidate(kind: .alt, option: o, verdict: "跟最佳差不多：走完局面\(Grading.standing(Grading.winProb(alt)))"))
+    if let alt = before.flatMap({ Grading.secondChoice($0) }), alt.best != r.uci, let o = engine(alt, id: "alt", title: String(localized: "也不錯")) {
+      out.append(Candidate(kind: .alt, option: o, verdict: String(localized: "跟最佳差不多：走完局面\(Grading.standing(Grading.winProb(alt)))")))
     }
     if r.uci != bestLine?.best {
       let after = evals[safe: ply + 1] ?? nil
-      let o = js["played"].map { trim($0, id: "played", title: "你走的") }
-        ?? LineOption(id: "played", title: "你走的", source: .engine, startFen: p.fenBefore, base: ply,
+      let o = js["played"].map { trim($0, id: "played", title: String(localized: "你走的")) }
+        ?? LineOption(id: "played", title: String(localized: "你走的"), source: .engine, startFen: p.fenBefore, base: ply,
                       plies: [p] + (after?.first?.best.flatMap { ChessLine.ply(fen: p.fenAfter, uci: $0, index: 1) }.map { [$0] } ?? []))
-      out.insert(Candidate(kind: .played, option: o, verdict: "走完局面\(Grading.standing(r.winAfter))"), at: 0)
+      out.insert(Candidate(kind: .played, option: o, verdict: String(localized: "走完局面\(Grading.standing(r.winAfter))")), at: 0)
     }
     playing = false; playTask?.cancel(); variation = nil
     current = ply
@@ -346,7 +348,8 @@ final class ReviewModel {
     let why: String? = out.first(where: { $0.kind == .best }).map { b in
       let bad = r.uci == bestLine?.best ? nil : e?.headline
       let good = js["best"]?.outcome.flatMap { $0.isEmpty ? nil : $0 }
-      return [bad, "改走 \(b.san)" + (good.map { "：\($0)" } ?? "")].compactMap { $0 }.joined(separator: "。")
+      let swap = good.map { String(localized: "改走 \(b.san)：\($0)") } ?? String(localized: "改走 \(b.san)")
+      return [bad, swap].compactMap { $0 }.joined(separator: String(localized: "。"))
     }
     compare = Compare(ply: ply, candidates: out, why: why)
   }
@@ -387,7 +390,7 @@ final class ReviewModel {
     // 剛好走了對局裡的下一步：直接往下一步，不開延伸
     if variation == nil, let next = line?.plies[safe: current], next.uci == uci { go(current + 1); Sounds.play(for: next); return }
     let plies = base.plies + [p]
-    let o = LineOption(id: "free", title: "自己走的延伸", source: .manual, startFen: base.start, base: base.at, plies: plies)
+    let o = LineOption(id: "free", title: String(localized: "自己走的延伸"), source: .manual, startFen: base.start, base: base.at, plies: plies)
     playTask?.cancel()
     playing = false
     if variation == nil { current = base.at }

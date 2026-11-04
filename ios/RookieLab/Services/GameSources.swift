@@ -5,9 +5,9 @@ enum SourceError: LocalizedError {
   case notFound, network, empty
   var errorDescription: String? {
     switch self {
-    case .notFound: "找不到這個帳號"
-    case .network: "暫時抓不到對局，稍後再試"
-    case .empty: "這個帳號最近沒有對局"
+    case .notFound: String(localized: "找不到這個帳號")
+    case .network: String(localized: "暫時抓不到對局，稍後再試")
+    case .empty: String(localized: "這個帳號最近沒有對局")
     }
   }
 }
@@ -188,8 +188,8 @@ enum Explorer {
   struct Result: Decodable { let total: Int; let moves: [Move] }
 
   static let bands: [(key: String, label: String)] = [
-    ("all", "全部"), ("0", "1000 以下"), ("1000", "1000–1199"), ("1200", "1200–1399"), ("1400", "1400–1599"),
-    ("1600", "1600–1799"), ("1800", "1800–1999"), ("2000", "2000–2199"), ("2200", "2200 以上"),
+    ("all", String(localized: "全部")), ("0", String(localized: "1000 以下")), ("1000", "1000–1199"), ("1200", "1200–1399"), ("1400", "1400–1599"),
+    ("1600", "1600–1799"), ("1800", "1800–1999"), ("2000", "2000–2199"), ("2200", String(localized: "2200 以上")),
   ]
 
   /// chess.com 分數 → 約等於的 Lichess 分數（資料庫是 Lichess 的；同一個人在 Lichess 通常高 300–500 分），只拿來選預設分段
@@ -207,7 +207,7 @@ enum Explorer {
   /// 好不好找：這個分段的玩家在這個局面，多少人走了這一步。局數不夠（少於 30 局）就不下結論
   static let minForDifficulty = 30
   struct Findability { let share: Double; let games: Int
-    var label: String { share >= 0.4 ? "好找" : share >= 0.15 ? "有點難" : "不容易找到" }
+    var label: String { share >= 0.4 ? String(localized: "好找") : share >= 0.15 ? String(localized: "有點難") : String(localized: "不容易找到") }
     var color: Color { share >= 0.4 ? .green : share >= 0.15 ? .orange : .red }
   }
   static func findability(_ r: Result?, uci: String) -> Findability? {

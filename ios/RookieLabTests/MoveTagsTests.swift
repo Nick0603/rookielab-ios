@@ -8,15 +8,15 @@ final class MoveTagsTests: XCTestCase {
   }
 
   func testBasics() throws {
-    XCTAssertEqual(try tag("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", "e1g1"), "入堡（短）")
+    XCTAssertEqual(try tag("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", "e1g1"), String(localized: "入堡（短）"))
     // 吃到沒人保護的后
-    XCTAssertEqual(try tag("4k3/8/8/3q4/8/8/8/3QK3 w - - 0 1", "d1d5"), "得子：吃后")
+    XCTAssertEqual(try tag("4k3/8/8/3q4/8/8/8/3QK3 w - - 0 1", "d1d5"), String(localized: "得子：吃\(Explain.pieceName("q"))"))
     // 后換后（對方吃得回來）
-    XCTAssertEqual(try tag("3rk3/8/8/3q4/8/8/8/3QK3 w - - 0 1", "d1d5"), "兌子")
+    XCTAssertEqual(try tag("3rk3/8/8/3q4/8/8/8/3QK3 w - - 0 1", "d1d5"), String(localized: "兌子"))
     // 馬被兵攻擊，走開
-    XCTAssertEqual(try tag("4k3/8/8/8/2p5/3N4/8/4K3 w - - 0 1", "d3f4"), "躲開攻擊：馬走開")
-    XCTAssertEqual(try tag("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "g1f3"), "出子")
-    XCTAssertEqual(try tag("4k3/8/8/8/8/8/8/R3K3 w - - 0 1", "a1a8"), "將軍")
+    XCTAssertEqual(try tag("4k3/8/8/8/2p5/3N4/8/4K3 w - - 0 1", "d3f4"), String(localized: "躲開攻擊：\(Explain.pieceName("n"))走開"))
+    XCTAssertEqual(try tag("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "g1f3"), String(localized: "出子"))
+    XCTAssertEqual(try tag("4k3/8/8/8/8/8/8/R3K3 w - - 0 1", "a1a8"), String(localized: "將軍"))
   }
 
   /// 對手投降：chess.com 看棋譜的 Termination，Lichess 看 opponentEnd

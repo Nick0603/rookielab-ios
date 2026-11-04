@@ -17,10 +17,10 @@ struct GameDigest: Identifiable {
     case threwWinning, opening, timeout, outplayed
     var zh: String {
       switch self {
-      case .threwWinning: "曾經大優，優勢沒守住"
-      case .opening: "開局就落後，沒追回來"
-      case .timeout: "超時"
-      case .outplayed: "一路被壓著打"
+      case .threwWinning: String(localized: "曾經大優，優勢沒守住")
+      case .opening: String(localized: "開局就落後，沒追回來")
+      case .timeout: String(localized: "超時")
+      case .outplayed: String(localized: "一路被壓著打")
       }
     }
   }
@@ -76,6 +76,10 @@ final class ReportModel {
   private(set) var done = 0
   private(set) var total = 0
   private(set) var running = false
+  /// 跑過一次了（還沒跑完第一次之前，整頁是載入畫面）
+  private(set) var ran = false
+  /// 細到每一步的進度（0...1）：分析中的那局算到第幾步也算進去，進度條不會一局一局跳
+  private(set) var fine = 0.0
   private var task: Task<Void, Never>?
   private var runKey = ""
 
@@ -104,26 +108,42 @@ final class ReportModel {
     deep = nil
     reviewCards = []
     done = 0
+    fine = 0
     total = list.count
     running = true
+    guard !list.isEmpty else { running = false; ran = true; return }
     task = Task { [weak self] in
       try? await StockfishService.shared.start()
-      for g in list {
+      // 分析佔 90%，最後彙整佔 10%
+      let n = Double(list.count)
+      for (i, g) in list.enumerated() {
         guard !Task.isCancelled else { return }
         let fresh = AnalysisStore.load(g.id) == nil
-        guard let line = ChessLine(pgn: g.pgn), let a = await AnalysisStore.analyze(g, line: line) else { continue }
+        guard let line = ChessLine(pgn: g.pgn), let a = await AnalysisStore.analyze(g, line: line, onStep: { [weak self] k, _, _ in
+          self?.fine = 0.9 * (Double(i) + Double(k) / Double(max(line.plies.count, 1))) / n
+        }) else { continue }
         guard let self, !Task.isCancelled else { return }
         if let d = GameDigest(game: g, line: line, analysis: a) {
           self.digests.append(d)
+          // 複習題的解說先在背景算好（主執行緒不等），再組題目
+          await d.prefetchExplanations()
           self.reviewCards += ReviewBuilder.cards(d)
           if fresh { _ = AutoAnalyzer.shared.record(d) }
         }
         self.done += 1
+        self.fine = max(self.fine, 0.9 * Double(i + 1) / n)
+        // 每局之間讓畫面喘口氣：多等一點點，載入動畫保持順
+        try? await Task.sleep(nanoseconds: 30_000_000)
       }
       // 全部分析完才算一次彙整，然後整頁一次出來（分析中是載入畫面）
       guard let self, !Task.isCancelled else { return }
+      self.fine = 0.93
       self.deep = await ReportJS.deep(self.digests)
+      self.fine = 1
+      try? await Task.sleep(nanoseconds: 300_000_000)
+      guard !Task.isCancelled else { return }
       self.running = false
+      self.ran = true
       Telemetry.log("report_done", ["games": self.digests.count])
     }
   }
@@ -200,21 +220,21 @@ final class ReportModel {
     if losses >= 3 {
       let threw = digests.filter { $0.lossReason == .threwWinning }.count
       if Double(threw) / Double(losses) >= 0.3 {
-        return ("優勢守住，就能多贏", "\(losses) 局輸棋裡有 \(threw) 局曾經大優，最後沒轉成勝利。拿到優勢之後，每一步先看對手的威脅。")
+        return (String(localized: "優勢守住，就能多贏"), String(localized: "\(losses) 局輸棋裡有 \(threw) 局曾經大優，最後沒轉成勝利。拿到優勢之後，每一步先看對手的威脅。"))
       }
       let timeout = digests.filter { $0.lossReason == .timeout }.count
       if Double(timeout) / Double(losses) >= 0.3 {
-        return ("時間分配是下一步", "\(losses) 局輸棋裡有 \(timeout) 局是超時。開局走熟悉的變化，把時間留給中局。")
+        return (String(localized: "時間分配是下一步"), String(localized: "\(losses) 局輸棋裡有 \(timeout) 局是超時。開局走熟悉的變化，把時間留給中局。"))
       }
       let opening = digests.filter { $0.lossReason == .opening }.count
       if Double(opening) / Double(losses) >= 0.3 {
-        return ("先把開局走穩", "\(losses) 局輸棋裡有 \(opening) 局在第 12 手就明顯落後。挑一兩個開局練熟。")
+        return (String(localized: "先把開局走穩"), String(localized: "\(losses) 局輸棋裡有 \(opening) 局在第 12 手就明顯落後。挑一兩個開局練熟。"))
       }
     }
     if let worst = phaseRows.max(by: { $0.per100 < $1.per100 }), worst.per100 > 0 {
-      return ("\(worst.phase.zh)最值得練", "你的\(worst.phase.zh)每 100 步有 \(String(format: "%.1f", worst.per100)) 個失誤，是三個階段裡最多的。")
+      return (String(localized: "\(worst.phase.zh)最值得練"), String(localized: "你的\(worst.phase.zh)每 100 步有 \(String(format: ")%.1fString(localized: ", worst.per100)) 個失誤，是三個階段裡最多的。"))
     }
-    return ("這幾局下得很穩", "沒有明顯一再出現的失誤，多分析幾局會看得更清楚。")
+    return (String(localized: "這幾局下得很穩"), String(localized: "沒有明顯一再出現的失誤，多分析幾局會看得更清楚。"))
   }
 }
 
@@ -224,11 +244,52 @@ struct ReportView: View {
   @State private var model = ReportModel()
   @State private var added: Int?
   @State private var drillSession: PracticeView.Session?
+  @State private var paywall = false
 
   private var types: [GameType] { GameType.types(app.games) }
   private var currentKey: String? { model.typeKey ?? GameType.pick(app.games) }
 
+  /// 還沒分析完（或還沒開始）：整頁只有載入畫面——不疊在清單上（半透明時會看到後面一直在跳）
+  private var loadingReport: Bool { app.games.isEmpty || model.running || !model.ran }
+
   var body: some View {
+    ZStack {
+      if loadingReport {
+        AnalyzingView(progress: model.fine, status: model.total > 0 ? String(localized: "分析最近 \(model.total) 局") : String(localized: "載入對局"), plies: nil,
+                      note: model.total > 0 ? String(localized: "第 \(min(model.done + 1, model.total))/\(model.total) 局・全部分析完會一次出來") : "", tips: AnalyzingView.reportTips, factFirst: model.total == 0)
+          .transition(.opacity)
+      } else {
+        content.transition(.opacity)
+      }
+    }
+    .animation(.easeOut(duration: 0.3), value: loadingReport)
+    .navigationTitle("報告")
+    .sheet(isPresented: $paywall) { PaywallView(from: "report") }
+    .fullScreenCover(item: $drillSession) { s in PuzzleSessionView(title: s.title, items: s.items, more: s.more) }
+    .navigationDestination(for: KeyMoveLink.self) { l in ReviewView(game: l.game, startAt: l.ply + 1) }
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        Menu {
+          Picker("時間類型", selection: Binding(get: { currentKey ?? "" }, set: { model.typeKey = $0 })) {
+            ForEach(types) { t in Text("\(t.label)（\(t.games) 局）").tag(t.key) }
+          }
+          Picker("局數", selection: Binding(get: { model.count }, set: { n in if n > 10, !Premium.shared.active { paywall = true } else { model.count = n } })) {
+            Text("最近 10 局").tag(10)
+            Text(Premium.shared.active ? String(localized: "最近 20 局") : String(localized: "最近 20 局（Premium）")).tag(20)
+          }
+        } label: {
+          Label(currentKey.map { GameType.label($0) } ?? String(localized: "篩選"), systemImage: "line.3.horizontal.decrease.circle")
+            .labelStyle(.titleAndIcon).font(.subheadline)
+        }
+      }
+    }
+    .onAppear { model.run(app.games); AppLog.add("open", "report \(model.digests.count)") }
+    .onChange(of: app.games.count) { model.run(app.games) }
+    .onChange(of: model.typeKey) { model.run(app.games) }
+    .onChange(of: model.count) { model.run(app.games) }
+  }
+
+  private var content: some View {
     List {
       if app.games.isEmpty {
         Section { HStack { ProgressView(); Text("載入對局…").foregroundStyle(.secondary) } }
@@ -248,38 +309,6 @@ struct ReportView: View {
       }
     }
     .listStyle(.insetGrouped)
-    // 還沒分析完：整頁是載入動畫，全部好了再一次出來（不一段一段跳出來）
-    .overlay {
-      if model.running && model.total > 0 {
-        AnalyzingView(progress: Double(model.done) / Double(model.total), status: "分析最近 \(model.total) 局", plies: nil,
-                      note: "第 \(min(model.done + 1, model.total))/\(model.total) 局・全部分析完會一次出來", tips: AnalyzingView.reportTips)
-          .transition(.opacity)
-      }
-    }
-    .animation(.snappy, value: model.running)
-    .navigationTitle("報告")
-    .fullScreenCover(item: $drillSession) { s in PuzzleSessionView(title: s.title, items: s.items, more: s.more) }
-    .navigationDestination(for: KeyMoveLink.self) { l in ReviewView(game: l.game, startAt: l.ply + 1) }
-    .toolbar {
-      ToolbarItem(placement: .topBarTrailing) {
-        Menu {
-          Picker("時間類型", selection: Binding(get: { currentKey ?? "" }, set: { model.typeKey = $0 })) {
-            ForEach(types) { t in Text("\(t.label)（\(t.games) 局）").tag(t.key) }
-          }
-          Picker("局數", selection: $model.count) {
-            Text("最近 10 局").tag(10)
-            Text("最近 20 局").tag(20)
-          }
-        } label: {
-          Label(currentKey.map { GameType.label($0) } ?? "篩選", systemImage: "line.3.horizontal.decrease.circle")
-            .labelStyle(.titleAndIcon).font(.subheadline)
-        }
-      }
-    }
-    .onAppear { model.run(app.games); AppLog.add("open", "report \(model.digests.count)") }
-    .onChange(of: app.games.count) { model.run(app.games) }
-    .onChange(of: model.typeKey) { model.run(app.games) }
-    .onChange(of: model.count) { model.run(app.games) }
   }
 
   // MARK: 區塊
@@ -296,10 +325,10 @@ struct ReportView: View {
         Text("再多分析幾局，就看得出你最常在哪裡丟分。").font(.subheadline).foregroundStyle(.secondary)
       }
       HStack(spacing: 0) {
-        stat("準確率", model.avgAccuracy.map { String(format: "%.1f", $0) } ?? "—", Brand.orange)
-        stat("勝", "\(model.wins)", .green)
-        stat("和", "\(model.draws)", .gray)
-        stat("負", "\(model.losses)", .red)
+        stat(String(localized: "準確率"), model.avgAccuracy.map { String(format: "%.1f", $0) } ?? "—", Brand.orange)
+        stat(String(localized: "勝"), "\(model.wins)", .green)
+        stat(String(localized: "和"), "\(model.draws)", .gray)
+        stat(String(localized: "負"), "\(model.losses)", .red)
       }
       if !model.digests.isEmpty {
         HStack(spacing: 12) {
@@ -325,7 +354,7 @@ struct ReportView: View {
       HStack(spacing: 6) {
         Circle().fill(s == .white ? Color.white : Brand.ink).overlay(Circle().stroke(Color.gray.opacity(0.5))).frame(width: 12, height: 12)
         VStack(alignment: .leading, spacing: 0) {
-          Text("\(s == .white ? "執白" : "執黑") \(x.games) 局").font(.caption.weight(.semibold))
+          Text("\(s == .white ? String(localized: "執白") : String(localized: "執黑")) \(x.games) 局").font(.caption.weight(.semibold))
           Text("得分 \(Int(x.score * 100))%・準確率 \(String(format: "%.0f", x.accuracy))").font(.caption2).foregroundStyle(.secondary)
         }
       }
@@ -402,7 +431,7 @@ struct ReportView: View {
     let fresh = cards.filter { !ReviewStore.shared.has($0.id) }
     return Section {
       VStack(alignment: .leading, spacing: 10) {
-        Text(fresh.isEmpty ? "這幾局的失誤都在複習裡了" : "把 \(fresh.count) 個失誤變成複習題").font(.headline)
+        Text(fresh.isEmpty ? String(localized: "這幾局的失誤都在複習裡了") : String(localized: "把 \(fresh.count) 個失誤變成複習題")).font(.headline)
         let kinds = ReviewCard.Kind.allCases.compactMap { k -> (ReviewCard.Kind, Int)? in
           let n = fresh.filter { $0.kinds.contains(k) }.count
           return n > 0 ? (k, n) : nil
@@ -426,7 +455,7 @@ struct ReportView: View {
           // 圖示＋字一起置中（Label 直接撐滿寬度時圖示和字會偏）
           HStack(spacing: 8) {
             Image(systemName: fresh.isEmpty ? "figure.strengthtraining.traditional" : "plus.rectangle.on.rectangle")
-            Text(fresh.isEmpty ? "去練習複習題" : "加進複習題庫（\(fresh.count) 題）")
+            Text(fresh.isEmpty ? String(localized: "去練習複習題") : String(localized: "加進複習題庫（\(fresh.count) 題）"))
           }
           .font(.headline).frame(maxWidth: .infinity, minHeight: 46)
         }
@@ -459,7 +488,7 @@ struct ReportView: View {
         NavigationLink(value: KeyMoveLink(game: r.game, ply: r.record.ply)) {
           VStack(alignment: .leading, spacing: 2) {
             Text("vs \(r.game.opponent)・第 \(r.record.ply / 2 + 1) 手 \(r.record.san)").font(.subheadline)
-            Text("最高到\(Grading.standing(r.peak))，\(r.reason.zh)\(r.clock.map { "（剩 \(Int($0)) 秒）" } ?? "")・\(r.game.result == .draw ? "和棋" : "輸了")")
+            Text(reversalDetail(r))
               .font(.caption).foregroundStyle(.secondary)
           }
         }
@@ -484,9 +513,9 @@ struct ReportView: View {
           Text("先練：\(p.pick.label)").font(.title3.bold()).foregroundStyle(Brand.ink)
           Text(p.pick.hint).font(.footnote).foregroundStyle(.secondary)
           HStack(spacing: 0) {
-            compare("你", p.pick.mine, Brand.orange)
-            compare("同分段", p.pick.same, .secondary)
-            compare("下一段", p.pick.next, .green)
+            compare(String(localized: "你"), p.pick.mine, Brand.orange)
+            compare(String(localized: "同分段"), p.pick.same, .secondary)
+            compare(String(localized: "下一段"), p.pick.next, .green)
           }
           Label { Text(p.pick.lesson).fixedSize(horizontal: false, vertical: true) } icon: { Image(systemName: "lightbulb.fill").foregroundStyle(Brand.orange) }
             .font(.subheadline.weight(.medium)).foregroundStyle(Brand.ink)
@@ -544,7 +573,7 @@ struct ReportView: View {
         }
       }
       if !mine.isEmpty {
-        Button { drillSession = PracticeView.Session(title: "我的相關失誤", items: mine.prefix(10).map(PuzzleItem.init(card:))) } label: {
+        Button { drillSession = PracticeView.Session(title: String(localized: "我的相關失誤"), items: mine.prefix(10).map(PuzzleItem.init(card:))) } label: {
           HStack(spacing: 8) { Image(systemName: "arrow.uturn.backward.circle"); Text("複習我自己走錯的 \(min(mine.count, 10)) 步") }
             .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 44)
         }
@@ -563,26 +592,26 @@ struct ReportView: View {
 
   @ViewBuilder private func quickSections(_ q: ReportJS.Quick) -> some View {
     Section {
-      bar("被將死", q.lossBy.checkmated, of: q.record.loss, .red)
-      bar("認輸", q.lossBy.resigned, of: q.record.loss, .orange)
-      bar("超時", q.lossBy.timeout, of: q.record.loss, .purple)
-      if q.lossBy.other > 0 { bar("其他", q.lossBy.other, of: q.record.loss, .gray) }
+      bar(String(localized: "被將死"), q.lossBy.checkmated, of: q.record.loss, .red)
+      bar(String(localized: "認輸"), q.lossBy.resigned, of: q.record.loss, .orange)
+      bar(String(localized: "超時"), q.lossBy.timeout, of: q.record.loss, .purple)
+      if q.lossBy.other > 0 { bar(String(localized: "其他"), q.lossBy.other, of: q.record.loss, .gray) }
     } header: {
       Text("怎麼輸的（\(q.record.loss) 局）")
     }
     Section("對手與狀態") {
-      row("對手平均分數", "\(q.opponentRating.avg)")
-      row("贏的時候對手", "\(q.opponentRating.whenWin) 分")
-      row("輸的時候對手", "\(q.opponentRating.whenLoss) 分")
-      if let d = q.ratingDelta { row("分數變化", "\(d.from) → \(d.to)（\(d.diff >= 0 ? "+" : "")\(d.diff)）") }
+      row(String(localized: "對手平均分數"), "\(q.opponentRating.avg)")
+      row(String(localized: "贏的時候對手"), String(localized: "\(q.opponentRating.whenWin) 分"))
+      row(String(localized: "輸的時候對手"), String(localized: "\(q.opponentRating.whenLoss) 分"))
+      if let d = q.ratingDelta { row(String(localized: "分數變化"), String(localized: "\(d.from) → \(d.to)（\(d.diff >= 0 ? ")+" : "String(localized: ")\(d.diff)）")) }
       if let f = q.fatigue {
         VStack(alignment: .leading, spacing: 2) {
           Text("一天下超過 \(f.threshold) 局之後").font(.subheadline)
-          Text("勝率 \(f.earlyWinRate)% → \(f.lateWinRate)%\(f.lateWinRate < f.earlyWinRate - 5 ? "，累了就休息一下" : "")").font(.caption).foregroundStyle(.secondary)
+          Text(f.lateWinRate < f.earlyWinRate - 5 ? String(localized: "勝率 \(f.earlyWinRate)% → \(f.lateWinRate)%，累了就休息一下") : String(localized: "勝率 \(f.earlyWinRate)% → \(f.lateWinRate)%")).font(.caption).foregroundStyle(.secondary)
         }
       }
-      row("執白勝率", "\(q.byColor.white.winRate)%（\(q.byColor.white.games) 局）")
-      row("執黑勝率", "\(q.byColor.black.winRate)%（\(q.byColor.black.games) 局）")
+      row(String(localized: "執白勝率"), String(localized: "\(q.byColor.white.winRate)%（\(q.byColor.white.games) 局）"))
+      row(String(localized: "執黑勝率"), String(localized: "\(q.byColor.black.winRate)%（\(q.byColor.black.games) 局）"))
     }
   }
 
@@ -603,22 +632,36 @@ struct ReportView: View {
     }
   }
 
+  private func reversalDetail(_ r: Reversal) -> String {
+    let peak = Grading.standing(r.peak)
+    let end = r.game.result == .draw ? String(localized: "和棋") : String(localized: "輸了")
+    if let c = r.clock { return String(localized: "最高到\(peak)，\(r.reason.zh)（剩 \(Int(c)) 秒）・\(end)") }
+    return String(localized: "最高到\(peak)，\(r.reason.zh)・\(end)")
+  }
+
   private func openingSection(_ q: ReportJS.Quick) -> some View {
     Section {
-      ForEach([("執白", q.topOpenings.asWhite), ("執黑", q.topOpenings.asBlack)], id: \.0) { side, list in
+      ForEach([(String(localized: "執白"), q.topOpenings.asWhite), (String(localized: "執黑"), q.topOpenings.asBlack)], id: \.0) { side, list in
         if !list.isEmpty {
           Text(side).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
           ForEach(list.prefix(4), id: \.name) { o in
-            HStack {
+            NavigationLink {
+              OpeningReportEntryView(family: o.name, side: side == String(localized: "執白") ? .white : .black)
+            } label: {
+              HStack {
               VStack(alignment: .leading, spacing: 1) {
                 Text(o.name).font(.subheadline).lineLimit(1)
                 Text("\(o.games) 局").font(.caption).foregroundStyle(.secondary)
               }
               Spacer()
               Text("勝 \(o.winRate)%").font(.subheadline.monospacedDigit().weight(.semibold)).foregroundStyle(o.winRate >= 50 ? .green : .red)
+              }
             }
           }
         }
+      }
+      NavigationLink { OpeningPracticeView() } label: {
+        Label("練習我的開局", systemImage: "play.circle.fill").foregroundStyle(Brand.orange)
       }
     } header: {
       Text("開局")
@@ -628,13 +671,13 @@ struct ReportView: View {
   @ViewBuilder private func deepSections(_ d: ReportJS.Deep) -> some View {
     if let t = d.time, t.moves >= 20 {
       Section {
-        row("平均每步", seconds(t.avg))
+        row(String(localized: "平均每步"), seconds(t.avg))
         if let bad = t.avgBad, let other = t.avgOther {
-          row("失誤的那步平均想", seconds(bad))
-          row("其他步平均想", seconds(other))
+          row(String(localized: "失誤的那步平均想"), seconds(bad))
+          row(String(localized: "其他步平均想"), seconds(other))
         }
         if let f = t.fastBadShare, t.badCount >= 3 {
-          Text("\(t.badCount) 個失誤裡，\(Int(f * 100))% 是很快就走的\(f >= 0.5 ? "：失誤多半是走太快，關鍵局面多想幾秒" : "")。").font(.subheadline)
+          Text(f >= 0.5 ? String(localized: "\(t.badCount) 個失誤裡，\(Int(f * 100))% 是很快就走的：失誤多半是走太快，關鍵局面多想幾秒。") : String(localized: "\(t.badCount) 個失誤裡，\(Int(f * 100))% 是很快就走的。")).font(.subheadline)
         }
         if let low = t.lowRate, let normal = t.normalRate, t.lowMoves >= 10 {
           Text("時間快不夠時每 100 步 \(String(format: "%.1f", low)) 個失誤，時間夠時 \(String(format: "%.1f", normal)) 個。").font(.subheadline)
@@ -681,7 +724,7 @@ struct ReportView: View {
     }
   }
 
-  private func seconds(_ t: Double) -> String { t < 10 ? String(format: "%.1f 秒", t) : "\(Int(t.rounded())) 秒" }
+  private func seconds(_ t: Double) -> String { t < 10 ? String(localized: "\(String(format: "%.1f", t)) 秒") : String(localized: "\(Int(t.rounded())) 秒") }
 
   private var openings: some View {
     Section("開局") {

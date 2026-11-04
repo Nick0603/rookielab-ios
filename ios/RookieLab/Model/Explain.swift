@@ -2,7 +2,17 @@ import Foundation
 
 /// 關鍵步的說明：從引擎的線看出「為什麼」，而不是只說該走哪一步
 enum Explain {
-  static let pieceZh = ["p": "兵", "n": "馬", "b": "象", "r": "車", "q": "后", "k": "王"]
+  static func pieceName(_ kind: String) -> String {
+    switch kind {
+    case "p": String(localized: "兵")
+    case "n": String(localized: "馬")
+    case "b": String(localized: "象")
+    case "r": String(localized: "車")
+    case "q": String(localized: "后")
+    case "k": String(localized: "王")
+    default: String(localized: "子")
+    }
+  }
 
   private static func pieceOn(_ fen: String, _ sq: String) -> (side: Side, kind: String)? {
     guard let code = FEN.pieces(fen)[sq] else { return nil }
@@ -17,9 +27,9 @@ enum Explain {
     let drop = -r.winDelta
     switch r.cls {
     case .brilliant:
-      return "這步是棄子：看起來送掉了子，算下去卻是最好的一步。"
+      return String(localized: "這步是棄子：看起來送掉了子，算下去卻是最好的一步。")
     case .great:
-      return "這步把局面從劣勢救回來，而且是唯一的好棋。"
+      return String(localized: "這步把局面從劣勢救回來，而且是唯一的好棋。")
     case .inaccuracy, .mistake, .miss, .blunder:
       break
     default:
@@ -28,11 +38,11 @@ enum Explain {
     let best = r.bestSan ?? "—"
     // 1. 走完之後對手有殺棋
     if let a = after?.first, let m = a.mate, m > 0 {
-      return "走完之後，對手有 \(m) 步殺：\(line(p.fenAfter, a.pv, m * 2 - 1))。該走 \(best)。"
+      return String(localized: "走完之後，對手有 \(m) 步殺：\(line(p.fenAfter, a.pv, m * 2 - 1))。該走 \(best)。")
     }
     // 2. 本來有殺棋沒走
     if let b = before?.first, let m = b.mate, m > 0 {
-      return "這裡有 \(m) 步殺：\(line(p.fenBefore, b.pv, m * 2 - 1))。"
+      return String(localized: "這裡有 \(m) 步殺：\(line(p.fenBefore, b.pv, m * 2 - 1))。")
     }
     // 3. 走完之後，對手可以吃掉你的子
     if let reply = after?.first?.best, reply.count >= 4,
@@ -40,21 +50,23 @@ enum Explain {
       let lost = FEN.pieceValue[target.kind] ?? 0
       let gained = p.captured.map { FEN.pieceValue[$0] ?? 0 } ?? 0
       if lost >= 1, lost - gained >= 1, drop >= 8, let san = FEN.san(fen: p.fenAfter, uci: reply) {
-        return "走完之後，對手可以 \(san) 吃掉你的\(pieceZh[target.kind] ?? "子")。該走 \(best)。"
+        return String(localized: "走完之後，對手可以 \(san) 吃掉你的\(Self.pieceName(target.kind))。該走 \(best)。")
       }
     }
     // 4. 有子可以吃沒吃
     if let b = before?.first?.best, b.count >= 4, b.prefix(4) != p.uci.prefix(4),
        let target = pieceOn(p.fenBefore, String(b.dropFirst(2).prefix(2))), target.side != p.mover,
        (FEN.pieceValue[target.kind] ?? 0) >= 3 {
-      return "這裡可以 \(best) 吃掉對手的\(pieceZh[target.kind] ?? "子")。"
+      return String(localized: "這裡可以 \(best) 吃掉對手的\(Self.pieceName(target.kind))。")
     }
     if r.cls == .miss {
       let follow = FEN.sanLine(fen: p.fenBefore, pv: before?.first?.pv ?? [], max: 5).dropFirst().joined(separator: " ")
-      return "這裡有機會拉開優勢：該走 \(best)\(follow.isEmpty ? "" : "，接著 \(follow)")。"
+      let then = follow.isEmpty ? "" : String(localized: "，接著 \(follow)")
+      return String(localized: "這裡有機會拉開優勢：該走 \(best)\(then)。")
     }
     let follow = FEN.sanLine(fen: p.fenBefore, pv: before?.first?.pv ?? [], max: 5).dropFirst().joined(separator: " ")
-    return "這步讓局面變差了。該走 \(best)\(follow.isEmpty ? "" : "，接著大概是 \(follow)")。"
+    let then = follow.isEmpty ? "" : String(localized: "，接著大概是 \(follow)")
+    return String(localized: "這步讓局面變差了。該走 \(best)\(then)。")
   }
 }
 
@@ -133,13 +145,13 @@ enum Continuations {
     var out: [LineOption] = []
     let k = p.index
     if let b = before?.first, let bs = r.bestSan, b.best?.prefix(4) != p.uci.prefix(4) {
-      out.append(LineOption(id: "best", title: "如果走 \(bs)（該走的）", source: .engine, startFen: p.fenBefore, base: k, plies: await engineLine(p.fenBefore, pv: b.pv, priority: priority)))
+      out.append(LineOption(id: "best", title: String(localized: "如果走 \(bs)（該走的）"), source: .engine, startFen: p.fenBefore, base: k, plies: await engineLine(p.fenBefore, pv: b.pv, priority: priority)))
     }
     if let before, let alt = Grading.secondChoice(before), let a = alt.best, a.prefix(4) != p.uci.prefix(4), let s = r.altSan {
-      out.append(LineOption(id: "alt", title: "如果走 \(s)（也可以）", source: .engine, startFen: p.fenBefore, base: k, plies: await engineLine(p.fenBefore, pv: alt.pv, priority: priority)))
+      out.append(LineOption(id: "alt", title: String(localized: "如果走 \(s)（也可以）"), source: .engine, startFen: p.fenBefore, base: k, plies: await engineLine(p.fenBefore, pv: alt.pv, priority: priority)))
     }
     if let a = after?.first, !a.pv.isEmpty {
-      out.append(LineOption(id: "punish", title: "你走 \(p.san) 之後：對手最好的應法", source: .engine, startFen: p.fenAfter, base: k + 1, plies: await engineLine(p.fenAfter, pv: a.pv, priority: priority)))
+      out.append(LineOption(id: "punish", title: String(localized: "你走 \(p.san) 之後：對手最好的應法"), source: .engine, startFen: p.fenAfter, base: k + 1, plies: await engineLine(p.fenAfter, pv: a.pv, priority: priority)))
     }
     // 資料庫：這個局面之後，真人最常怎麼接
     if let db = await Explorer.fetch(fen: p.fenAfter, band: "all"), db.total >= 8 {
@@ -153,7 +165,7 @@ enum Continuations {
       for (i, line) in lines where !line.isEmpty {
         let m = tops[i]
         let share = m.games * 100 / max(db.total, 1)
-        out.append(LineOption(id: "db\(i)", title: "大家常這樣接：\(m.san)", source: .database(games: m.games, share: share), startFen: p.fenAfter, base: k + 1, plies: line))
+        out.append(LineOption(id: "db\(i)", title: String(localized: "大家常這樣接：\(m.san)"), source: .database(games: m.games, share: share), startFen: p.fenAfter, base: k + 1, plies: line))
       }
     }
     // 該走的那步之後，真人常見的下法
@@ -161,7 +173,7 @@ enum Continuations {
        let db = await Explorer.fetch(fen: bp.fenAfter, band: "all"), db.total >= 8, let top = db.moves.first {
       let line = await humanLine(bp.fenAfter, first: top.uci, maxPlies: 9)
       if !line.isEmpty {
-        out.append(LineOption(id: "dbBest", title: "走 \(bp.san) 之後，大家常見的下法", source: .database(games: db.total, share: top.games * 100 / max(db.total, 1)),
+        out.append(LineOption(id: "dbBest", title: String(localized: "走 \(bp.san) 之後，大家常見的下法"), source: .database(games: db.total, share: top.games * 100 / max(db.total, 1)),
                               startFen: p.fenBefore, base: k, plies: [bp] + line.enumerated().map { i, x in x.reindexed(i + 1) }))
       }
     }

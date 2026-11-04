@@ -36,8 +36,10 @@ BUILD=$(date +%Y%m%d%H%M)
 echo "▶ 封存（build ${BUILD}）"
 xcodebuild -project RookieLab.xcodeproj -scheme RookieLab -configuration Release \
   -destination 'generic/platform=iOS' -archivePath build/RookieLab.xcarchive \
-  DEVELOPMENT_TEAM="$ASC_TEAM_ID" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD" \
-  "${AUTH[@]}" -quiet archive
+  DEVELOPMENT_TEAM="$ASC_TEAM_ID" CURRENT_PROJECT_VERSION="$BUILD" \
+  CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" \
+  RL_PROFILE_APP="Rookie Lab AppStore io.rookielab.app" RL_PROFILE_SHARE="Rookie Lab AppStore io.rookielab.app.share" RL_PROFILE_WIDGET="Rookie Lab AppStore io.rookielab.app.widget" \
+  -quiet archive
 
 cat > build/ExportOptions.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -52,6 +54,7 @@ cat > build/ExportOptions.plist <<PLIST
   <key>provisioningProfiles</key><dict>
     <key>io.rookielab.app</key><string>Rookie Lab AppStore io.rookielab.app</string>
     <key>io.rookielab.app.share</key><string>Rookie Lab AppStore io.rookielab.app.share</string>
+    <key>io.rookielab.app.widget</key><string>Rookie Lab AppStore io.rookielab.app.widget</string>
   </dict>
   <key>uploadSymbols</key><true/>
 </dict></plist>
@@ -61,4 +64,5 @@ echo "▶ 上傳到 App Store Connect"
 xcodebuild -exportArchive -archivePath build/RookieLab.xcarchive -exportOptionsPlist build/ExportOptions.plist \
   -exportPath build/export "${AUTH[@]}"
 
+echo "build 號：${BUILD}（給 testflight-distribute.py 的第三個參數）"
 echo "上傳好了。App Store Connect 處理完（約 10–30 分鐘）會出現在 TestFlight，自己的帳號加進「內部測試」就能在手機的 TestFlight App 安裝。"

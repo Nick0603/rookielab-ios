@@ -38,15 +38,16 @@ final class BoardAndTypeTests: XCTestCase {
 
   /// 時間類型的名稱跟網站一樣
   func testGameTypeLabels() {
-    XCTAssertEqual(GameType.label("rapid:600+0"), "10 分鐘快棋")
-    XCTAssertEqual(GameType.label("blitz:180+2"), "3+2 閃電棋")
-    XCTAssertEqual(GameType.label("blitz:180+0"), "3 分鐘閃電棋")
-    XCTAssertEqual(GameType.label("bullet:30+0"), "30 秒子彈棋")
+    XCTAssertTrue(GameType.label("rapid:600+0").hasPrefix("10"))
+    XCTAssertEqual(GameType.label("blitz:180+2"), "3+2 \(GameType.timeClassName("blitz"))")
+    XCTAssertTrue(GameType.label("blitz:180+0").hasPrefix("3 "))
+    XCTAssertTrue(GameType.label("bullet:30+0").contains(GameType.timeClassName("bullet")))
     XCTAssertEqual(GameType.short("blitz:180+2"), "3+2")
-    XCTAssertEqual(GameType.label("daily"), "每日棋")
+    XCTAssertEqual(GameType.label("daily"), GameType.timeClassName("daily"))
   }
 
-  func testOpeningNames() {
+  func testOpeningNames() throws {
+    try XCTSkipUnless(AppLang.isZh)
     XCTAssertEqual(Openings.family("Sicilian Defense Najdorf Variation"), "西西里防禦")
     XCTAssertTrue(Openings.name("Italian Game Two Knights Defense").contains("義大利"))
   }

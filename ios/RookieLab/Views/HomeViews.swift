@@ -1,10 +1,13 @@
+import StoreKit
 import SwiftUI
 
 /// 整個 App 共用：目前的帳號與它的對局（對局、報告兩個分頁看同一份）
 @MainActor @Observable
 final class AppModel {
   var account: Account? { didSet { if account != oldValue { games = []; error = nil; Task { await load() } } } }
-  private(set) var games: [GameSummary] = []
+  private(set) var games: [GameSummary] = [] {
+    didSet { if openLatestWhenLoaded, let g = games.first { openLatestWhenLoaded = false; openGame = g } }
+  }
   private(set) var loading = false
   private(set) var error: String?
   /// 已分析過的局 → 我的準確率（列表上顯示）
@@ -12,6 +15,22 @@ final class AppModel {
   var tab: AppTab = .games
   /// 分享進來、要直接打開的那一局
   var openGame: GameSummary?
+  /// Siri／捷徑、小工具要直接開始今天的練習（練習分頁看到就開始）
+  var startPractice = false
+  /// 對局還沒抓到時要打開最新一局：抓到就開
+  var openLatestWhenLoaded = false
+
+  /// Siri／捷徑、小工具點進來的動作
+  func run(_ a: Router.Action) {
+    switch a {
+    case .practice:
+      tab = .practice
+      startPractice = true
+    case .latestGame:
+      tab = .games
+      if let g = games.first { openGame = g } else { openLatestWhenLoaded = true }
+    }
+  }
   var importing: ImportState?
 
   enum ImportState: Identifiable {
@@ -98,6 +117,7 @@ final class AppModel {
       guard account == a else { loading = false; return }
       games = all
       GameCache.save(all, for: a)
+      WidgetBridge.update(latest: all.first)
       error = nil
       refreshAccuracy()
       // 背景提醒只提醒這之後的新對局
@@ -105,7 +125,7 @@ final class AppModel {
       // 新對局（最近 3 天、還沒分析過）自動在背景分析，失誤加進複習
       AutoAnalyzer.shared.start(games) { [weak self] in self?.refreshAccuracy() }
     } catch {
-      self.error = (error as? LocalizedError)?.errorDescription ?? "暫時抓不到對局"
+      self.error = (error as? LocalizedError)?.errorDescription ?? String(localized: "暫時抓不到對局")
       AppLog.add("error", "games: \(self.error ?? "")")
     }
     loading = false
@@ -116,6 +136,9 @@ final class AppModel {
   /// rookielab://import?url=…（分享延伸）或貼上的對局連結
   func handle(_ url: URL) {
     Telemetry.log("open_url", ["host": url.host ?? url.scheme ?? ""])
+    // 小工具點進來：rookielab://practice、rookielab://latest
+    if url.scheme == "rookielab", url.host == "practice" { run(.practice); return }
+    if url.scheme == "rookielab", url.host == "latest" { run(.latestGame); return }
     guard url.scheme == "rookielab", url.host == "import",
           let link = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "url" })?.value else { return }
     Task { await importLink(link) }
@@ -123,7 +146,7 @@ final class AppModel {
 
   /// 從對局連結認出帳號：存過的帳號裡有其中一方就用它；連結帶了 /white、/black 就用那一方；都沒有才問
   func importLink(_ text: String) async {
-    guard let link = GameLink.find(in: text) else { importing = .failed("這不是 Chess.com 或 Lichess 的對局連結。"); return }
+    guard let link = GameLink.find(in: text) else { importing = .failed(String(localized: "這不是 Chess.com 或 Lichess 的對局連結。")); return }
     importing = .loading
     do {
       let s = try await GameSources.shared(link)
@@ -137,7 +160,7 @@ final class AppModel {
         importing = .pickSide(s)
       }
     } catch {
-      importing = .failed("找不到這局，可能是還沒結束的對局，或連結不完整。")
+      importing = .failed(String(localized: "找不到這局，可能是還沒結束的對局，或連結不完整。"))
     }
   }
 
@@ -152,11 +175,12 @@ final class AppModel {
       tab = .games
       openGame = g
     } catch {
-      importing = .failed("找到帳號了，但抓不到這局的棋譜，稍後再試。")
+      importing = .failed(String(localized: "找到帳號了，但抓不到這局的棋譜，稍後再試。"))
     }
   }
 
   func refreshAccuracy() {
+    if let g = games.first { WidgetBridge.update(latest: g) }
     let gs = games
     Task.detached(priority: .utility) {
       var out: [String: Double] = [:]
@@ -173,6 +197,13 @@ final class AppModel {
 enum AppTab: Hashable { case games, report, practice, analysis, me }
 
 struct RootView: View {
+  private var openingPreview: Bool {
+    #if DEBUG
+    ProcessInfo.processInfo.arguments.contains("-openingBoard")
+    #else
+    false
+    #endif
+  }
   @State private var app = AppModel()
   @State private var splash = true
 
@@ -188,7 +219,9 @@ struct RootView: View {
 
   var body: some View {
     ZStack {
-      if app.account == nil {
+      if openingPreview {
+        NavigationStack { OpeningAnalysisView(account: "local") }
+      } else if app.account == nil {
         OnboardingView { app.use($0) }
       } else {
         TabView(selection: $app.tab) {
@@ -220,6 +253,9 @@ struct RootView: View {
     .environment(app)
     .tint(Brand.orange)
     .onOpenURL { app.handle($0) }
+    // Siri／捷徑、小工具：冷啟動時在 task 接，App 開著時在 onChange 接
+    .task { if let a = Router.shared.pending { Router.shared.pending = nil; app.run(a) } }
+    .onChange(of: Router.shared.pending) { _, a in if let a { Router.shared.pending = nil; app.run(a) } }
     .onChange(of: app.tab) { _, t in AppLog.add("tab", "\(t)") }
     .overlay(alignment: .top) {
       if case .loading = app.importing {
@@ -253,7 +289,7 @@ struct PickSideSheet: View {
             Circle().fill(side == .white ? Color.white : Brand.ink).overlay(Circle().stroke(Color.gray.opacity(0.5))).frame(width: 16, height: 16)
             Text(name).font(.headline)
             Spacer()
-            Text(side == .white ? "執白" : "執黑").font(.subheadline).foregroundStyle(.secondary)
+            Text(side == .white ? String(localized: "執白") : String(localized: "執黑")).font(.subheadline).foregroundStyle(.secondary)
           }
           .padding(.horizontal, 16).frame(minHeight: 52)
         }
@@ -295,12 +331,12 @@ struct SplashView: View {
         Image("AppLogo").resizable().scaledToFit()
           .frame(width: 120, height: 120)
           .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-          .shadow(color: Brand.orange.opacity(0.25), radius: 16, y: 8)
+          .shadow(color: Brand.teal.opacity(0.22), radius: 16, y: 8)
           .scaleEffect(pop ? 1 : 0.4)
           .rotationEffect(.degrees(nod ? -6 : 0), anchor: .bottom)
           .opacity(pop ? 1 : 0)
         VStack(spacing: 4) {
-          Text("Rookie Lab").font(.largeTitle.bold()).foregroundStyle(Brand.orange)
+          Text("Rookie Lab").font(.largeTitle.bold()).foregroundStyle(Brand.ink)
           Text("每一盤棋，都讓你更強").font(.subheadline).foregroundStyle(.secondary)
         }
         .offset(y: title ? 0 : 16)
@@ -325,6 +361,7 @@ struct SplashView: View {
 struct OnboardingView: View {
   @Environment(AppModel.self) private var app
   let submit: (Account) -> Void
+  @State private var showOpenings = false
   @State private var platform: Platform = .chesscom
   @State private var username = ""
   @FocusState private var focused: Bool
@@ -335,18 +372,22 @@ struct OnboardingView: View {
         HStack(spacing: 12) {
           Image("AppLogo").resizable().scaledToFit().frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
           VStack(alignment: .leading) {
-            Text("Rookie Lab").font(.title2.bold()).foregroundStyle(Brand.orange)
+            Text("Rookie Lab").font(.title2.bold()).foregroundStyle(Brand.ink)
             Text("西洋棋對局分析").font(.subheadline).foregroundStyle(.secondary)
           }
         }
         .padding(.top, 24)
         Text("每一盤棋，\n都讓你更強").font(.largeTitle.bold()).foregroundStyle(Brand.ink)
         VStack(alignment: .leading, spacing: 10) {
-          point("star.circle.fill", "每一步評級，關鍵步標出該走的")
-          point("chart.xyaxis.line", "跨局看出你最常在哪裡丟分")
-          point("person.2.fill", "看同分數的人，這一步怎麼走")
+          point("star.circle.fill", String(localized: "每一步評級，關鍵步標出該走的"))
+          point("chart.xyaxis.line", String(localized: "跨局看出你最常在哪裡丟分"))
+          point("person.2.fill", String(localized: "看同分數的人，這一步怎麼走"))
         }
         AccountForm(platform: $platform, username: $username, focused: $focused) { submit($0) }
+        Button { focused = false; showOpenings = true } label: {
+          Label("先探索開局，不用帳號", systemImage: "square.grid.3x3")
+            .frame(maxWidth: .infinity, minHeight: 44)
+        }.buttonStyle(.bordered).tint(Brand.orange)
         VStack(alignment: .leading, spacing: 8) {
           Text("或者，直接分享一局過來").font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink)
           Text("在 Chess.com、Lichess 的對局頁點分享，選 Rookie Lab，會自動認出你的帳號。也可以貼上對局連結：").font(.footnote).foregroundStyle(.secondary)
@@ -361,6 +402,12 @@ struct OnboardingView: View {
     }
     .scrollDismissesKeyboard(.interactively)
     .background(Brand.paper)
+    .fullScreenCover(isPresented: $showOpenings) {
+      NavigationStack {
+        OpeningPracticeView()
+          .toolbar { ToolbarItem(placement: .cancellationAction) { Button("關閉") { showOpenings = false } } }
+      }
+    }
   }
 
   private func point(_ icon: String, _ s: String) -> some View {
@@ -448,7 +495,7 @@ struct GamesView: View {
       }
       #endif
     }
-    .navigationTitle(app.account?.username ?? "對局")
+    .navigationTitle(app.account?.username ?? String(localized: "對局"))
     // 點標題切換帳號（iOS 原生的標題選單）
     .toolbarTitleMenu {
       ForEach(app.accounts) { a in
@@ -494,7 +541,7 @@ struct TypeFilter: View {
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 8) {
-        chip("全部", short: nil, n: total, key: nil)
+        chip(String(localized: "全部"), short: nil, n: total, key: nil)
         ForEach(types) { t in chip(t.label, short: t.short, n: t.games, key: t.key) }
       }
       .scrollTargetLayout()
@@ -541,9 +588,9 @@ struct ShareGuideCard: View {
           Button { withAnimation { hidden = true } } label: { Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.secondary) }
             .buttonStyle(.plain).accessibilityLabel("收起教學")
         }
-        step(1, "在 Chess.com 或 Lichess 的對局頁，點分享")
-        step(2, "選 Rookie Lab")
-        step(3, "自動認出你的帳號，打開這局的復盤")
+        step(1, String(localized: "在 Chess.com 或 Lichess 的對局頁，點分享"))
+        step(2, String(localized: "選 Rookie Lab"))
+        step(3, String(localized: "自動認出你的帳號，打開這局的復盤"))
         Button("第一次在分享選單找不到？") { detail = true }.font(.footnote)
       }
       .padding(14)
@@ -592,7 +639,7 @@ struct GameRow: View {
 
   var body: some View {
     HStack(spacing: 12) {
-      Text(game.result == .win ? "勝" : game.result == .loss ? "負" : "和")
+      Text(game.result == .win ? String(localized: "勝") : game.result == .loss ? String(localized: "負") : String(localized: "和"))
         .font(.subheadline.bold()).frame(width: 32, height: 32)
         .background(resultColor.opacity(0.15), in: Circle())
         .foregroundStyle(resultColor)
@@ -630,6 +677,7 @@ struct MeView: View {
   @State private var remind = Notifier.enabled
   @State private var remindHour = Notifier.hour
   @State private var autoAdd = AutoAnalyzer.autoAdd
+  @State private var showPaywall = false
 
   var body: some View {
     List {
@@ -659,6 +707,18 @@ struct MeView: View {
       } footer: {
         Text("點一下切換；往左滑刪除；右上角「編輯」可以調整順序。刪除只是從這支手機移除，不影響你的 Chess.com、Lichess 帳號。")
       }
+      Section {
+        if Premium.shared.active {
+          Label("Premium 使用中", systemImage: "checkmark.seal.fill").foregroundStyle(Brand.orange)
+          Button("管理訂閱") { Task { if let w = UIApplication.shared.connectedScenes.first as? UIWindowScene { try? await AppStore.showManageSubscriptions(in: w) } } }
+        } else {
+          Button { showPaywall = true } label: { Label("升級 Premium", systemImage: "sparkles") }
+          Button("恢復購買") { Task { await Premium.shared.restore() } }
+        }
+      } header: {
+        Text("Premium")
+      }
+      .sheet(isPresented: $showPaywall) { PaywallView(from: "me") }
       Section {
         Toggle("每天提醒我複習", isOn: Binding(get: { remind }, set: { on in
           if on { Task { remind = await Notifier.requestAndEnable() } } else { remind = false; Notifier.enabled = false; Notifier.reschedule() }
@@ -707,7 +767,7 @@ struct MeView: View {
     .confirmationDialog("刪除 \(confirm?.username ?? "") ？", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }), titleVisibility: .visible) {
       Button("從這支手機移除", role: .destructive) { if let c = confirm { withAnimation { app.remove(c) } }; confirm = nil }
     } message: {
-      Text(confirm?.id == app.account?.id ? "這是目前用的帳號，刪除後會換到下一個帳號。" : "之後可以再加回來。")
+      Text(confirm?.id == app.account?.id ? String(localized: "這是目前用的帳號，刪除後會換到下一個帳號。") : String(localized: "之後可以再加回來。"))
     }
     .sheet(isPresented: $adding) {
       NavigationStack {

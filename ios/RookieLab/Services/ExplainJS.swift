@@ -22,7 +22,7 @@ enum ExplainJS {
     let outcome: String
     let note: String?
     let net: Int
-    var plainOutcome: String { ExplainJS.plain(outcome) + (note.map { "（\(ExplainJS.plain($0))）" } ?? "") }
+    var plainOutcome: String { ExplainJS.plain(outcome) + (note.map { String(localized: "（\(ExplainJS.plain($0))）") } ?? "") }
   }
 
   struct Explanation: Decodable {
@@ -31,25 +31,38 @@ enum ExplainJS {
     let reasons: [String]
     let lines: [Line]
     /// 給使用者看的理由：拿掉「評分 +2.7 → -4.4」這行，其他句子裡的評分換成「均勢、小優」這種說法
-    var plainReasons: [String] { reasons.filter { !$0.hasPrefix("評分") }.map(ExplainJS.plain) }
+    var plainReasons: [String] { reasons.filter { !$0.hasPrefix("評分") && !$0.hasPrefix("Score ") }.map(ExplainJS.plain) }
   }
 
   /// 「評分從 -0.4 掉到 -1.6」→「局面從均勢變成小劣」。網站解說裡的評分是走這步那一方的視角
+  /// 中文走中文句型；其他語言目前 JS 回英文，走英文句型（es、pt 的解說上線後，找不到句型就保持原句）
   nonisolated static func plain(_ text: String) -> String {
     func word(_ v: String) -> String {
-      if v.contains("M") { return v.hasPrefix("-") ? "被將殺" : "可以將殺" }
+      if v.contains("M") { return AppLang.isZh ? (v.hasPrefix("-") ? "被將殺" : "可以將殺") : (v.hasPrefix("-") ? "getting mated" : "mate in sight") }
       guard let x = Double(v) else { return v }
-      return Grading.standing(Grading.winProb(cp: Int(x * 100), mate: nil))
+      let win = Grading.winProb(cp: Int(x * 100), mate: nil)
+      return AppLang.isZh ? Grading.standing(win) : Grading.standingEnglish(win)
     }
     let num = #"([+-]?M?\d*(?:\.\d+)?)"#
     var out = text
-    let rules: [(String, ([String]) -> String)] = [
-      ("評分從 \(num) 掉到 \(num)", { m in word(m[0]) == word(m[1]) ? "局面還是\(word(m[0]))，但變差了" : "局面從\(word(m[0]))變成\(word(m[1]))" }),
-      ("評分從 \(num) 升到 \(num)", { m in "局面從\(word(m[0]))變成\(word(m[1]))" }),
-      ("評分維持在 \(num)", { m in "局面維持\(word(m[0]))" }),
-      ("掉到 \(num)", { m in "變成\(word(m[0]))" }),
-      ("評分 \(num)", { m in word(m[0]) }),
-    ]
+    let rules: [(String, ([String]) -> String)]
+    if AppLang.isZh {
+      rules = [
+        ("評分從 \(num) 掉到 \(num)", { m in word(m[0]) == word(m[1]) ? "局面還是\(word(m[0]))，但變差了" : "局面從\(word(m[0]))變成\(word(m[1]))" }),
+        ("評分從 \(num) 升到 \(num)", { m in "局面從\(word(m[0]))變成\(word(m[1]))" }),
+        ("評分維持在 \(num)", { m in "局面維持\(word(m[0]))" }),
+        ("掉到 \(num)", { m in "變成\(word(m[0]))" }),
+        ("評分 \(num)", { m in word(m[0]) }),
+      ]
+    } else {
+      rules = [
+        ("the score drops from \(num) to \(num)", { m in word(m[0]) == word(m[1]) ? "the position is still \(word(m[0])), but worse" : "the position goes from \(word(m[0])) to \(word(m[1]))" }),
+        ("the score stays at \(num)", { m in "the position stays \(word(m[0]))" }),
+        ("the score drops to \(num)", { m in "the position becomes \(word(m[0]))" }),
+        ("your move drops it to \(num)", { m in "your move makes it \(word(m[0]))" }),
+        ("\\(score \(num)\\)", { m in "(\(word(m[0])))" }),
+      ]
+    }
     for (pattern, make) in rules {
       guard let re = try? NSRegularExpression(pattern: pattern) else { continue }
       for m in re.matches(in: out, range: NSRange(out.startIndex..., in: out)).reversed() {
@@ -61,7 +74,10 @@ enum ExplainJS {
     return out
   }
 
-  private static let context: JSContext? = {
+  /// 解說引擎在自己的執行緒上跑（一次幾十到幾百毫秒），主執行緒只負責畫面：載入動畫、換卡才不會卡
+  private static let queue = DispatchQueue(label: "rookielab.explain-js", qos: .userInitiated)
+
+  nonisolated(unsafe) private static let context: JSContext? = {
     guard let url = Bundle.main.url(forResource: "explain", withExtension: "js"), let src = try? String(contentsOf: url, encoding: .utf8),
           let ctx = JSContext() else { return nil }
     ctx.exceptionHandler = { _, e in
@@ -102,18 +118,59 @@ enum ExplainJS {
       evalAfter: p.isCheckmate ? Eval(cp: nil, mate: p.mover == .white ? 1 : -1) : white(after?.first, fen: p.fenAfter))
   }
 
+  /// 一個要算的解說：只帶原始資料，轉成網站格式（走法換算、JSON）也在解說執行緒上做，主執行緒只排隊
+  struct Request: @unchecked Sendable {
+    let key: String
+    let record: MoveRecord
+    let ply: Ply
+    let before: [EngineLine]?
+    let after: [EngineLine]?
+    let opponent: Bool
+    let lang: String
+  }
+
+  static func request(key: String, record r: MoveRecord, ply p: Ply, before: [EngineLine]?, after: [EngineLine]?, opponent: Bool = false) -> Request? {
+    let lang = AppLang.js
+    return Request(key: (opponent ? key + "-opp" : key) + "-" + lang, record: r, ply: p, before: before, after: after, opponent: opponent, lang: lang)
+  }
+
+  /// 在解說執行緒上算（呼叫端自己決定是同步等，還是非同步）
+  nonisolated private static func compute(_ q: Request) -> Explanation? {
+    guard let json = try? JSONEncoder().encode(webRecord(q.record, ply: q.ply, before: q.before, after: q.after)), let rec = String(data: json, encoding: .utf8),
+          let fn = context?.objectForKeyedSubscript("RLExplain"), !fn.isUndefined,
+          let out = fn.call(withArguments: [q.ply.fenBefore, q.ply.san, rec, q.opponent, q.lang])?.toString(), out != "null", out != "undefined" else { return nil }
+    return try? JSONDecoder().decode(Explanation.self, from: Data(out.utf8))
+  }
+
   /// before／after：走這步之前、之後的局面的引擎前幾名（走棋方視角）
   /// opponent：這步是對手走的，說明換成從使用者的角度講（「你」「對手」對調）
+  /// 同步版：先查快取（載入時都先用 prefetch 算好了）；沒有才當場算
   static func explain(key: String, record r: MoveRecord, ply p: Ply, before: [EngineLine]?, after: [EngineLine]?, opponent: Bool = false) -> Explanation? {
-    let key = opponent ? key + "-opp" : key
-    if let hit = cache[key] { return hit }
-    guard let ctx = context, let fn = ctx.objectForKeyedSubscript("RLExplain"), !fn.isUndefined else { return nil }
-    let rec = webRecord(r, ply: p, before: before, after: after)
-    guard let json = try? JSONEncoder().encode(rec), let s = String(data: json, encoding: .utf8),
-          let out = fn.call(withArguments: [p.fenBefore, p.san, s, opponent])?.toString(), out != "null", out != "undefined",
-          let e = try? JSONDecoder().decode(Explanation.self, from: Data(out.utf8)) else { return nil }
-    cache[key] = e
+    let k = (opponent ? key + "-opp" : key) + "-" + AppLang.js
+    if let hit = cache[k] { return hit }
+    guard let q = request(key: key, record: r, ply: p, before: before, after: after, opponent: opponent) else { return nil }
+    // 不用 queue.sync：sync 會直接在呼叫的執行緒（主執行緒）跑 JS，之後 JS 回收記憶體時會暫停主執行緒、動畫一頓一頓。
+    // 一律丟到解說執行緒，主執行緒等結果（只有快取沒算到時才會走這裡）
+    nonisolated(unsafe) var e: Explanation?
+    let done = DispatchSemaphore(value: 0)
+    queue.async { e = compute(q); done.signal() }
+    done.wait()
+    if let e { cache[k] = e }
     return e
+  }
+
+  static func cached(_ q: Request) -> Bool { cache[q.key] != nil }
+
+  /// 在背景一個一個算好放進快取，主執行緒完全不等；progress：算完幾個（0...1）
+  static func prefetch(_ list: [Request], progress: ((Double) -> Void)? = nil) async {
+    let todo = list.filter { cache[$0.key] == nil }
+    for (i, q) in todo.enumerated() {
+      if Task.isCancelled { return }
+      let e: Explanation? = await withCheckedContinuation { c in queue.async { c.resume(returning: compute(q)) } }
+      if let e { cache[q.key] = e }
+      progress?(Double(i + 1) / Double(todo.count))
+    }
+    progress?(1)
   }
 }
 
@@ -121,27 +178,40 @@ extension Grading {
   /// 局面好壞的白話（走棋方視角的勝率）：勝勢、大優、小優、均勢、小劣、大劣、敗勢
   static func standing(_ win: Double) -> String {
     switch win {
-    case 0.9...: "勝勢"
-    case 0.75..<0.9: "大優"
-    case 0.6..<0.75: "小優"
-    case 0.4..<0.6: "均勢"
-    case 0.25..<0.4: "小劣"
-    case 0.1..<0.25: "大劣"
-    default: "敗勢"
+    case 0.9...: String(localized: "勝勢")
+    case 0.75..<0.9: String(localized: "大優")
+    case 0.6..<0.75: String(localized: "小優")
+    case 0.4..<0.6: String(localized: "均勢")
+    case 0.25..<0.4: String(localized: "小劣")
+    case 0.1..<0.25: String(localized: "大劣")
+    default: String(localized: "敗勢")
+    }
+  }
+
+  /// 英文句子裡嵌的局面白話（JS 回英文時用）
+  nonisolated static func standingEnglish(_ win: Double) -> String {
+    switch win {
+    case 0.9...: "winning"
+    case 0.75..<0.9: "clearly better"
+    case 0.6..<0.75: "slightly better"
+    case 0.4..<0.6: "equal"
+    case 0.25..<0.4: "slightly worse"
+    case 0.1..<0.25: "clearly worse"
+    default: "lost"
     }
   }
 
   /// 跟最佳步比差多少的白話（不用百分比）
   static func gapText(_ gap: Int) -> String {
-    gap <= 2 ? "一樣好" : gap <= 6 ? "差一點" : gap <= 12 ? "明顯變差" : "大幅變差"
+    gap <= 2 ? String(localized: "一樣好") : gap <= 6 ? String(localized: "差一點") : gap <= 12 ? String(localized: "明顯變差") : String(localized: "大幅變差")
   }
 }
 
 extension MoveRecord {
   /// 「你：小優 → 大劣」——講清楚是誰的局面變了
   func standingText(me: Side) -> String {
-    let who = mover == me ? "你" : "對手"
+    let who = mover == me ? String(localized: "你") : String(localized: "對手")
     let a = Grading.standing(winBefore), b = Grading.standing(winAfter)
-    return a == b ? "\(who)：維持\(a)" : "\(who)：\(a) → \(b)"
+    return a == b ? String(localized: "\(who)：維持\(a)") : String(localized: "\(who)：\(a) → \(b)")
   }
 }

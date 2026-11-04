@@ -7,7 +7,7 @@ struct RookieLabApp: App {
   @Environment(\.scenePhase) private var phase
   static let refreshId = "io.rookielab.refresh"
 
-  init() { Telemetry.start() }
+  init() { Telemetry.start(); Premium.shared.start() }
 
   var body: some Scene {
     WindowGroup {
@@ -42,8 +42,8 @@ struct RookieLabApp: App {
     d.set(games[0].endedAt.timeIntervalSince1970, forKey: "lastSeenGame-\(a.id)")
     d.set(Day.number(), forKey: "newGameNotified")
     let c = UNMutableNotificationContent()
-    c.title = fresh.count == 1 ? "剛下完一局 vs \(fresh[0].opponent)" : "剛下完 \(fresh.count) 局"
-    c.body = "打開看這局最該記住的一件事，失誤會自動變成複習題"
+    c.title = fresh.count == 1 ? String(localized: "剛下完一局 vs \(fresh[0].opponent)") : String(localized: "剛下完 \(fresh.count) 局")
+    c.body = String(localized: "打開看這局最該記住的一件事，失誤會自動變成複習題")
     c.sound = .default
     try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "newgame", content: c, trigger: nil))
   }

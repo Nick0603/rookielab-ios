@@ -6,10 +6,10 @@ enum Difficulty {
   enum Level: Int { case glance = 1, combo, deep, positional
     var zh: String {
       switch self {
-      case .glance: "一眼就有"
-      case .combo: "兩步組合"
-      case .deep: "要連算三步以上"
-      case .positional: "局面判斷"
+      case .glance: String(localized: "一眼就有")
+      case .combo: String(localized: "兩步組合")
+      case .deep: String(localized: "要連算三步以上")
+      case .positional: String(localized: "局面判斷")
       }
     }
   }
@@ -18,10 +18,10 @@ enum Difficulty {
     case easy, fit, hard, veryHard
     var zh: String {
       switch self {
-      case .easy: "簡單"
-      case .fit: "剛好"
-      case .hard: "有點難"
-      case .veryHard: "很難"
+      case .easy: String(localized: "簡單")
+      case .fit: String(localized: "剛好")
+      case .hard: String(localized: "有點難")
+      case .veryHard: String(localized: "很難")
       }
     }
   }
@@ -99,5 +99,8 @@ enum Difficulty {
 extension MoveRecord {
   /// 這一步讓勝率變了多少（百分點，走的那一方視角）：期望值的變化，比「53% → 35%」好讀
   var winDelta: Int { Int(((winAfter - winBefore) * 100).rounded()) }
-  var winDeltaText: String { winDelta == 0 ? "勝率不變" : "勝率 \(winDelta > 0 ? "+" : "−")\(abs(winDelta))%" }
+  var winDeltaText: String {
+    let sign = winDelta > 0 ? "+" : "−"
+    return winDelta == 0 ? String(localized: "勝率不變") : String(localized: "勝率 \(sign)\(abs(winDelta))%")
+  }
 }

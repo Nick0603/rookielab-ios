@@ -29,6 +29,9 @@ struct GameSummary: Identifiable, Codable, Hashable {
   /// 對手那一方的結束方式（resigned＝對手投降）；舊的快取沒有這欄，chess.com 的再看棋譜標頭
   var opponentEnd: String? = nil
 
+  /// 導覽列標題：執白／執黑 vs 對手
+  var versusTitle: String { color == .white ? String(localized: "執白 vs \(opponent)") : String(localized: "執黑 vs \(opponent)") }
+
   /// 使用者時區的日期
   var dateText: String { endedAt.formatted(date: .numeric, time: .omitted) }
 
@@ -67,16 +70,16 @@ enum MoveClass: String, Codable, CaseIterable {
 
   var zh: String {
     switch self {
-    case .brilliant: "傑出"
-    case .great: "好棋"
-    case .best: "最佳"
-    case .excellent: "優秀"
-    case .good: "不錯"
-    case .book: "開局理論"
-    case .inaccuracy: "不精確"
-    case .mistake: "失誤"
-    case .miss: "錯失良機"
-    case .blunder: "嚴重失誤"
+    case .brilliant: String(localized: "傑出")
+    case .great: String(localized: "好棋")
+    case .best: String(localized: "最佳")
+    case .excellent: String(localized: "優秀")
+    case .good: String(localized: "不錯")
+    case .book: String(localized: "開局理論")
+    case .inaccuracy: String(localized: "不精確")
+    case .mistake: String(localized: "失誤")
+    case .miss: String(localized: "錯失良機")
+    case .blunder: String(localized: "嚴重失誤")
     }
   }
 
@@ -155,14 +158,17 @@ extension Color {
   }
 }
 
-/// 品牌色（跟網站同一組）
+/// 品牌色：跟標誌（棋格＋橘色箭頭，src/components/BrandMark.tsx）同一組。
+/// 橘＝主要按鈕與重點（標誌的箭頭）；深青＝第二品牌色；棋盤用標誌的兩種青色調
 enum Brand {
   static let orange = Color(hex: 0xE8711F)
+  static let teal = Color(hex: 0x1F6F78)
+  static let tealLight = Color(hex: 0xCFE3E5)
   static let ink = Color(hex: 0x2A2522)
-  static let paper = Color(hex: 0xFFFDF9)
+  static let paper = Color(hex: 0xFFF7EF)
   static let cream = Color(hex: 0xF6F1EA)
-  static let lightSquare = Color(hex: 0xF0D9B5)
-  static let darkSquare = Color(hex: 0xB58863)
+  static let lightSquare = Color(hex: 0xE2EEEF)
+  static let darkSquare = Color(hex: 0x6FA2A8)
   static let bestArrow = Color(hex: 0x22C55E)
   static let altArrow = Color(hex: 0xBBF7D0, opacity: 0.85)
 }

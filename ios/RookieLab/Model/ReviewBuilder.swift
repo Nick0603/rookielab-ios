@@ -6,18 +6,18 @@ struct Reversal: Identifiable {
     case endgame, timePressure, timeout, middlegame
     var zh: String {
       switch self {
-      case .endgame: "殘局下錯"
-      case .timePressure: "時間快不夠時下錯"
-      case .timeout: "大優時超時"
-      case .middlegame: "中局失誤"
+      case .endgame: String(localized: "殘局下錯")
+      case .timePressure: String(localized: "時間快不夠時下錯")
+      case .timeout: String(localized: "大優時超時")
+      case .middlegame: String(localized: "中局失誤")
       }
     }
     var tip: String {
       switch self {
-      case .endgame: "殘局子少，一步錯就收不回來：先算對手的反擊，再推兵"
-      case .timePressure: "領先時走簡單的步、換子，別把時間花光"
-      case .timeout: "大優還輸，是時間沒分配好：領先之後每步給自己時間上限"
-      case .middlegame: "優勢還沒收下來就鬆懈：每一步先看對手的威脅"
+      case .endgame: String(localized: "殘局子少，一步錯就收不回來：先算對手的反擊，再推兵")
+      case .timePressure: String(localized: "領先時走簡單的步、換子，別把時間花光")
+      case .timeout: String(localized: "大優還輸，是時間沒分配好：領先之後每步給自己時間上限")
+      case .middlegame: String(localized: "優勢還沒收下來就鬆懈：每一步先看對手的威脅")
       }
     }
   }
@@ -78,6 +78,20 @@ enum ReviewBuilder {
   }
 
   /// 一局裡我錯失的機會 → 複習卡（每局最多 perGame 題，掉最多的先）
+  /// cards 會用到的解說（先在背景算好）
+  @MainActor static func requests(_ d: GameDigest) -> [ExplainJS.Request] {
+    let g = d.game
+    return d.analysis.records.compactMap { $0 }.filter { r in
+      guard r.mover == g.color, let before = d.analysis.evals[safe: r.ply] ?? nil else { return false }
+      return isOpportunity(r, before: before)
+    }
+    .sorted { ($0.winBefore - $0.winAfter) > ($1.winBefore - $1.winAfter) }.prefix(perGame)
+    .compactMap { r in
+      guard let p = d.line.plies[safe: r.ply] else { return nil }
+      return ExplainJS.request(key: "\(g.id)-\(r.ply)", record: r, ply: p, before: d.analysis.evals[r.ply] ?? nil, after: d.analysis.evals[safe: r.ply + 1] ?? nil)
+    }
+  }
+
   @MainActor static func cards(_ d: GameDigest) -> [ReviewCard] {
     let g = d.game
     let cl = clocks(g)

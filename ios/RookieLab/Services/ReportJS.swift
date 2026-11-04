@@ -88,7 +88,7 @@ enum ReportJS {
     }
   }
 
-  private static func json(_ v: some Encodable) -> String { (try? String(data: JSONEncoder().encode(v), encoding: .utf8)) ?? "[]" }
+  nonisolated private static func json(_ v: some Encodable) -> String { (try? String(data: JSONEncoder().encode(v), encoding: .utf8)) ?? "[]" }
 
   /// 網站的 GameSummary
   private struct WebGame: Encodable {
@@ -110,7 +110,7 @@ enum ReportJS {
 
   /// 先學的一件事：至少 10 局才給
   static func prescription(_ games: [GameSummary], rating: Int) async -> Prescription? {
-    await call("RLPrescription", [json(games.map(WebGame.init)), "\(rating)"])
+    await call("RLPrescription", [json(games.map(WebGame.init)), "\(rating)", AppLang.js])
   }
 
   /// 網站的 AnalyzedGame（我方每一步的評級、勝率曲線、各階段步數）
@@ -130,8 +130,22 @@ enum ReportJS {
     let phaseMoves: [String: Int]
   }
 
+  /// 跨局彙整：幾百步換成網站格式（走法換算很花時間）和跑 JS 都在報告執行緒上做，主執行緒只等結果，載入動畫不會停
   @MainActor static func deep(_ digests: [GameDigest]) async -> Deep? {
-    let list: [WebAnalyzed] = digests.map { d in
+    let lang = AppLang.js
+    nonisolated(unsafe) let ds = digests
+    return await withCheckedContinuation { c in
+      queue.async {
+        let input = json(webAnalyzed(ds))
+        guard let fn = context?.objectForKeyedSubscript("RLDeep"), !fn.isUndefined,
+              let out = fn.call(withArguments: [input, lang])?.toString(), out != "null", out != "undefined" else { c.resume(returning: nil); return }
+        c.resume(returning: try? JSONDecoder().decode(Deep.self, from: Data(out.utf8)))
+      }
+    }
+  }
+
+  nonisolated private static func webAnalyzed(_ digests: [GameDigest]) -> [WebAnalyzed] {
+    digests.map { d in
       let g = WebGame(d.game)
       let mine = d.analysis.records.compactMap { $0 }.filter { $0.mover == d.game.color }
       let moves = mine.map { r in
@@ -159,6 +173,5 @@ enum ReportJS {
         phaseBlunders: Dictionary(uniqueKeysWithValues: d.phases.map { ($0.key.rawValue, $0.value.errors) }),
         phaseMoves: Dictionary(uniqueKeysWithValues: d.phases.map { ($0.key.rawValue, $0.value.moves) }))
     }
-    return await call("RLDeep", [json(list)])
   }
 }

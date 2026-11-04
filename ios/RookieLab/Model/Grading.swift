@@ -91,7 +91,7 @@ enum Grading {
 
   enum Phase: String, CaseIterable, Codable {
     case opening, middlegame, endgame
-    var zh: String { self == .opening ? "開局" : self == .middlegame ? "中局" : "殘局" }
+    var zh: String { self == .opening ? String(localized: "開局") : self == .middlegame ? String(localized: "中局") : String(localized: "殘局") }
   }
 
   /// 跟網站 phaseOf 一樣：非兵子力 ≤ 16 是殘局，前 10 手是開局，其他是中局

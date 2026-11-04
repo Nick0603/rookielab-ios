@@ -105,7 +105,7 @@ struct ShareView: View {
             .buttonStyle(.borderedProminent).tint(.orange)
           if state.failed {
             Text("打不開 App 的話：複製連結，到 Rookie Lab 的「對局」頁按右上角貼上。").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-            Button(copied ? "已複製" : "複製連結") { UIPasteboard.general.string = link; copied = true }
+            Button(copied ? String(localized: "已複製") : String(localized: "複製連結")) { UIPasteboard.general.string = link; copied = true }
           }
         } else {
           Image(systemName: "questionmark.circle").font(.system(size: 44)).foregroundStyle(.secondary)

@@ -120,9 +120,9 @@ struct ExplorerSheet: View {
         Text("\(i + 1)").font(.caption.bold()).frame(width: 20, height: 20)
           .background(i == 0 ? Brand.bestArrow : Color.gray.opacity(0.4), in: Circle()).foregroundStyle(.white)
         Text(san).font(.headline)
-        if san == played { tag(playedByOpp ? "對手走的" : "你走的", .blue) }
+        if san == played { tag(playedByOpp ? String(localized: "對手走的") : String(localized: "你走的"), .blue) }
         Spacer()
-        Text(i == 0 ? "最佳" : Grading.gapText(gap))
+        Text(i == 0 ? String(localized: "最佳") : Grading.gapText(gap))
           .font(.subheadline.monospacedDigit().weight(.semibold))
           .foregroundStyle(i == 0 || gap <= 2 ? Brand.bestArrow : gap <= 6 ? .orange : .red)
       }
@@ -161,7 +161,7 @@ struct ExplorerSheet: View {
         } else {
           if let b = best, r.total >= 30 {
             let share = Double(r.moves.first(where: { $0.san == b })?.games ?? 0) / Double(r.total)
-            (Text("這一段的玩家，\(Int(share * 100))% 走了最佳步 \(b)：") + Text(share >= 0.4 ? "好找" : share >= 0.15 ? "有點難" : "不容易找到").bold().foregroundColor(share >= 0.4 ? .green : share >= 0.15 ? .orange : .red))
+            (Text(String(localized: "這一段的玩家，\(Int(share * 100))% 走了最佳步 \(b)：")) + Text(share >= 0.4 ? String(localized: "好找") : share >= 0.15 ? String(localized: "有點難") : String(localized: "不容易找到")).bold().foregroundColor(share >= 0.4 ? .green : share >= 0.15 ? .orange : .red))
               .font(.subheadline)
           }
           ForEach(r.moves.prefix(8), id: \.uci) { m in
@@ -169,8 +169,8 @@ struct ExplorerSheet: View {
             VStack(alignment: .leading, spacing: 4) {
               HStack {
                 Text(m.san).bold()
-                if m.san == best { tag("最佳", .green) }
-                if m.san == played { tag(playedByOpp ? "對手走的" : "你走的", .blue) }
+                if m.san == best { tag(String(localized: "最佳"), .green) }
+                if m.san == played { tag(playedByOpp ? String(localized: "對手走的") : String(localized: "你走的"), .blue) }
                 Spacer()
                 Text("\(Int(share * 100))% · \(m.games.formatted()) 局").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
               }
@@ -188,7 +188,7 @@ struct ExplorerSheet: View {
     } header: {
       Text("大家怎麼走")
     } footer: {
-      Text("Lichess 快棋以上的對局，分數是 Lichess 分數\(platform == .chesscom ? "（你的 chess.com 分數已換算）" : "")。")
+      Text(platform == .chesscom ? String(localized: "Lichess 快棋以上的對局，分數是 Lichess 分數（你的 chess.com 分數已換算）。") : String(localized: "Lichess 快棋以上的對局，分數是 Lichess 分數。"))
     }
   }
 

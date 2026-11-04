@@ -57,6 +57,8 @@ final class AutoAnalyzer {
           self.done += 1
           continue
         }
+        // 複習題、「一件事」要用的解說先在背景算好，主執行緒不等（使用者這時可能正看著載入動畫）
+        await d.prefetchExplanations()
         self.newCards += self.record(d)
         if let l = Lesson(d) { self.lessons.append(l) }
         self.done += 1
@@ -65,6 +67,19 @@ final class AutoAnalyzer {
       self?.running = false
       Notifier.reschedule()
     }
+  }
+}
+
+extension GameDigest {
+  /// 分析完一局會用到的解說（複習題、這局最該記住的一件事）：在背景先算好
+  @MainActor func prefetchExplanations() async {
+    let mine = analysis.records.compactMap { $0 }.filter { $0.mover == game.color }
+    let worst = mine.filter(\.cls.isBad).max(by: { ($0.winBefore - $0.winAfter) < ($1.winBefore - $1.winAfter) })
+    let best = mine.first(where: { $0.cls == .brilliant || $0.cls == .great }) ?? mine.first
+    let lesson = [worst ?? best].compactMap { $0 }.compactMap { r in
+      ExplainJS.request(key: "\(game.id)-\(r.ply)", record: r, ply: line.plies[r.ply], before: analysis.evals[r.ply] ?? nil, after: analysis.evals[safe: r.ply + 1] ?? nil)
+    }
+    await ExplainJS.prefetch(ReviewBuilder.requests(self) + lesson)
   }
 }
 
@@ -87,14 +102,14 @@ struct Lesson: Identifiable {
       let e = key(worst)
       ply = worst.ply
       good = false
-      title = "第 \(worst.ply / 2 + 1) 手 \(worst.san)：\(e?.headline ?? worst.cls.zh)"
-      detail = e?.plainReasons.first ?? "該走 \(worst.bestSan ?? "—")"
+      title = String(localized: "第 \(worst.ply / 2 + 1) 手 \(worst.san)：\(e?.headline ?? worst.cls.zh)")
+      detail = e?.plainReasons.first ?? String(localized: "該走 \(worst.bestSan ?? "—")")
     } else if let best = mine.first(where: { $0.cls == .brilliant || $0.cls == .great }) ?? mine.first {
       let e = key(best)
       ply = best.ply
       good = true
-      title = best.cls == .brilliant || best.cls == .great ? "第 \(best.ply / 2 + 1) 手 \(best.san)：\(best.cls.zh)" : "這局沒有明顯的失誤"
-      detail = e?.plainReasons.first ?? "每一步都穩穩的，繼續保持"
+      title = best.cls == .brilliant || best.cls == .great ? String(localized: "第 \(best.ply / 2 + 1) 手 \(best.san)：\(best.cls.zh)") : String(localized: "這局沒有明顯的失誤")
+      detail = e?.plainReasons.first ?? String(localized: "每一步都穩穩的，繼續保持")
     } else {
       return nil
     }
@@ -138,11 +153,11 @@ enum Notifier {
       let streak = store.streak + (store.practicedToday ? 0 : 0)
       let due = store.cards.filter { !$0.mastered && $0.due <= Day.number(at) }.count
       if streak > 0 {
-        content.title = "連續 \(streak) 天，今天也來幾題"
+        content.title = String(localized: "連續 \(streak) 天，今天也來幾題")
       } else {
-        content.title = "今天練幾題就好"
+        content.title = String(localized: "今天練幾題就好")
       }
-      content.body = due > 0 ? "有 \(due) 題到期，大約 \(max(1, min(due, PracticeView.daily) / 2)) 分鐘" : "下完棋回來分析，看這局最該記住的一件事"
+      content.body = due > 0 ? String(localized: "有 \(due) 題到期，大約 \(max(1, min(due, PracticeView.daily) / 2)) 分鐘") : String(localized: "下完棋回來分析，看這局最該記住的一件事")
       content.sound = .default
       let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: at)
       c.add(UNNotificationRequest(identifier: "daily-\(k)", content: content, trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
@@ -162,8 +177,8 @@ struct TodayCard: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 14) {
-        ring(Double(store.todayCount) / 5, "複習", "\(min(store.todayCount, 5))/5")
-        ring(Double(auto.analyzedToday), "分析", "\(min(auto.analyzedToday, 1))/1")
+        ring(Double(store.todayCount) / 5, String(localized: "複習"), "\(min(store.todayCount, 5))/5")
+        ring(Double(auto.analyzedToday), String(localized: "分析"), "\(min(auto.analyzedToday, 1))/1")
         VStack(alignment: .leading, spacing: 2) {
           HStack(spacing: 4) {
             Image(systemName: "flame.fill").foregroundStyle(store.streak > 0 ? Brand.orange : .gray.opacity(0.5))
@@ -213,10 +228,10 @@ struct TodayCard: View {
 
   private var goalText: String {
     let r = store.todayCount >= 5, a = auto.analyzedToday >= 1
-    if r && a { return "今天的目標完成了" }
-    if r { return "再分析一局新對局就完成今天的目標" }
-    if a { return "再複習 \(5 - store.todayCount) 題就完成今天的目標" }
-    return "今日目標：分析 1 局、複習 5 題"
+    if r && a { return String(localized: "今天的目標完成了") }
+    if r { return String(localized: "再分析一局新對局就完成今天的目標") }
+    if a { return String(localized: "再複習 \(5 - store.todayCount) 題就完成今天的目標") }
+    return String(localized: "今日目標：分析 1 局、複習 5 題")
   }
 
   private func ring(_ v: Double, _ label: String, _ value: String) -> some View {
@@ -256,16 +271,19 @@ struct WeeklyCard: View {
     return VStack(alignment: .leading, spacing: 8) {
       Text("這週").font(.headline)
       HStack(spacing: 0) {
-        stat("練了", "\(thisWeek) 題", lastWeek > 0 ? diff(thisWeek - lastWeek, unit: "題") : nil)
-        stat("準確率", now.map { String(format: "%.0f", $0) } ?? "—", now.flatMap { n in before.map { diff(Int((n - $0).rounded()), unit: "") } })
-        stat("學會", "\(store.masteredCount) 題", nil)
+        stat(String(localized: "練了"), String(localized: "\(thisWeek) 題"), lastWeek > 0 ? diff(thisWeek - lastWeek, unit: String(localized: "題")) : nil)
+        stat(String(localized: "準確率"), now.map { String(format: "%.0f", $0) } ?? "—", now.flatMap { n in before.map { diff(Int((n - $0).rounded()), unit: "") } })
+        stat(String(localized: "學會"), String(localized: "\(store.masteredCount) 題"), nil)
       }
       Text("只跟上週的自己比").font(.caption2).foregroundStyle(.secondary)
     }
     .padding(.vertical, 4)
   }
 
-  private func diff(_ d: Int, unit: String) -> String { d == 0 ? "跟上週一樣" : "比上週 \(d > 0 ? "+" : "")\(d)\(unit)" }
+  private func diff(_ d: Int, unit: String) -> String {
+    let n = "\(d > 0 ? "+" : "")\(d)"
+    return d == 0 ? String(localized: "跟上週一樣") : String(localized: "比上週 \(n)\(unit)")
+  }
 
   private func stat(_ label: String, _ v: String, _ sub: String?) -> some View {
     VStack(spacing: 2) {
@@ -286,7 +304,7 @@ struct LessonSheet: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Label(lesson.good ? "這局最好的一步" : "這局最該記住的一件事", systemImage: lesson.good ? "star.fill" : "lightbulb.fill")
+      Label(lesson.good ? String(localized: "這局最好的一步") : String(localized: "這局最該記住的一件事"), systemImage: lesson.good ? "star.fill" : "lightbulb.fill")
         .font(.subheadline.weight(.semibold)).foregroundStyle(lesson.good ? .green : Brand.orange)
       Text(lesson.title).font(.title3.bold()).foregroundStyle(Brand.ink)
       Text(lesson.detail).font(.body).foregroundStyle(Brand.ink.opacity(0.85)).fixedSize(horizontal: false, vertical: true)

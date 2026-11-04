@@ -11,11 +11,11 @@ struct ReviewPoolView: View {
   var body: some View {
     List {
       Section { summary }
-      group("今天待練", store.dueCards, empty: "今天的都練完了", icon: "play.circle")
-      if !store.doneToday.isEmpty { group("今天已練", store.doneToday, empty: nil, icon: "checkmark.circle") }
-      group("複習中", store.waiting.filter { $0.lastDay != Day.number() }, empty: "練過的題會放在這裡，到了時間再出", icon: "clock")
-      if !store.unstarted.isEmpty { group("未開始", store.unstarted, empty: nil, icon: "tray") }
-      group("已熟練", store.masteredCards, empty: "自己連續走對 3 次的題會移到這裡", icon: "checkmark.seal")
+      group(String(localized: "今天待練"), store.dueCards, empty: String(localized: "今天的都練完了"), icon: "play.circle")
+      if !store.doneToday.isEmpty { group(String(localized: "今天已練"), store.doneToday, empty: nil, icon: "checkmark.circle") }
+      group(String(localized: "複習中"), store.waiting.filter { $0.lastDay != Day.number() }, empty: String(localized: "練過的題會放在這裡，到了時間再出"), icon: "clock")
+      if !store.unstarted.isEmpty { group(String(localized: "未開始"), store.unstarted, empty: nil, icon: "tray") }
+      group(String(localized: "已熟練"), store.masteredCards, empty: String(localized: "自己連續走對 3 次的題會移到這裡"), icon: "checkmark.seal")
     }
     .navigationTitle("複習題庫")
     .navigationDestination(for: ReviewCard.self) { c in
@@ -30,15 +30,15 @@ struct ReviewPoolView: View {
   private var summary: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 0) {
-        stat("\(store.dueCards.count)", "今天待練", Brand.orange)
-        stat("\(store.doneToday.count)", "今天已練", .green)
-        stat("\(store.waiting.count)", "複習中")
-        stat("\(store.masteredCards.count)", "已熟練", Color(hex: 0x15803D))
+        stat("\(store.dueCards.count)", String(localized: "今天待練"), Brand.orange)
+        stat("\(store.doneToday.count)", String(localized: "今天已練"), .green)
+        stat("\(store.waiting.count)", String(localized: "複習中"))
+        stat("\(store.masteredCards.count)", String(localized: "已熟練"), Color(hex: 0x15803D))
       }
-      Text("題目是你對局裡錯過的好機會：當時有勝勢、只差一步。練過的進「複習中」，隔 1 天、3 天、再久一點再出；自己連續走對 \(ReviewStore.graduate) 次就「已熟練」。看了答案的這一輪隔 \(PuzzleSessionView.againAfter) 題再走一次。")
+      Text("題目是你對局裡錯過的好機會：當時有勝勢、只差一步。練過的進「複習中」，隔 3 天、7 天、再久一點再出；自己連續走對 \(ReviewStore.graduate) 次就「已熟練」。看過答案或跳過的題，也至少隔 3 天才再出。")
         .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
       if !store.dueCards.isEmpty {
-        Button { session = .init(title: "今日複習", items: store.session().map(PuzzleItem.init(card:))) } label: {
+        Button { session = .init(title: String(localized: "今日複習"), items: store.session().map(PuzzleItem.init(card:))) } label: {
           Label("練今天的 \(min(store.dueCards.count, PracticeView.daily)) 題", systemImage: "play.fill").font(.headline).frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent).tint(Brand.orange)
@@ -64,7 +64,7 @@ struct ReviewPoolView: View {
         NavigationLink(value: c) { row(c) }
           .swipeActions(edge: .trailing) { Button(role: .destructive) { confirm = c } label: { Label("移除", systemImage: "trash") } }
           .swipeActions(edge: .leading) {
-            Button { session = .init(title: "練這題", items: [PuzzleItem(card: c)]) } label: { Label("練這題", systemImage: "play") }.tint(Brand.orange)
+            Button { session = .init(title: String(localized: "練這題"), items: [PuzzleItem(card: c)]) } label: { Label(String(localized: "練這題"), systemImage: "play") }.tint(Brand.orange)
           }
       }
     } header: {
@@ -91,10 +91,10 @@ struct ReviewPoolView: View {
   }
 
   private func next(_ c: ReviewCard) -> String {
-    if c.mastered { return "已熟練" }
-    if c.isNew { return "未開始" }
-    if c.lastDay == Day.number() && c.due > Day.number() { return "今天已練" }
-    let d = c.due - Day.number()
-    return d <= 0 ? "今天" : d == 1 ? "明天" : "\(d) 天後"
+    if c.mastered { return String(localized: "已熟練") }
+    if c.isNew { return String(localized: "未開始") }
+    if c.lastDay == Day.number() && c.availableDay > Day.number() { return String(localized: "今天已練") }
+    let d = c.availableDay - Day.number()
+    return d <= 0 ? String(localized: "今天") : d == 1 ? String(localized: "明天") : String(localized: "\(d) 天後")
   }
 }

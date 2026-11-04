@@ -316,10 +316,10 @@ enum Sounds {
     var id: String { rawValue }
     var zh: String {
       switch self {
-      case .soft: "柔和木頭"
-      case .tap: "輕點"
-      case .crisp: "清脆"
-      case .off: "關閉"
+      case .soft: String(localized: "柔和木頭")
+      case .tap: String(localized: "輕點")
+      case .crisp: String(localized: "清脆")
+      case .off: String(localized: "關閉")
       }
     }
   }
@@ -377,7 +377,7 @@ struct SoundToggle: View {
     } label: {
       Image(systemName: off ? "speaker.slash" : "speaker.wave.2")
     }
-    .accessibilityLabel(off ? "打開走子音效" : "關閉走子音效")
+    .accessibilityLabel(off ? String(localized: "打開走子音效") : String(localized: "關閉走子音效"))
   }
 }
 
@@ -392,14 +392,14 @@ enum Haptics {
 /// 提示：綠色的圈一閃一閃，一眼看到要動哪顆子
 private struct HintPulse: View {
   let size: CGFloat
-  @State private var on = false
   var body: some View {
+    // phaseAnimator 只重播閃爍本身；repeatForever 掛在 view 上時，棋盤換大小也會被一直重播
     RoundedRectangle(cornerRadius: size * 0.12)
-      .fill(Brand.bestArrow.opacity(on ? 0.45 : 0.15))
-      .overlay(RoundedRectangle(cornerRadius: size * 0.12).stroke(Brand.bestArrow, lineWidth: size * 0.08))
       .frame(width: size * 0.96, height: size * 0.96)
-      .scaleEffect(on ? 1 : 0.88)
-      .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: on)
-      .onAppear { on = true }
+      .phaseAnimator([false, true]) { v, on in
+        v.foregroundStyle(Brand.bestArrow.opacity(on ? 0.45 : 0.15))
+          .overlay(RoundedRectangle(cornerRadius: size * 0.12).stroke(Brand.bestArrow, lineWidth: size * 0.08))
+          .scaleEffect(on ? 1 : 0.88)
+      } animation: { _ in .easeInOut(duration: 0.6) }
   }
 }

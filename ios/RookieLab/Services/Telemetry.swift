@@ -125,7 +125,8 @@ final class Events: @unchecked Sendable {
     guard on, !sending, !pending.isEmpty else { return }
     sending = true
     let chunk = Array(pending.prefix(Self.batch))
-    #if DEBUG
+    // Debug 版、模擬器、ios/device.sh 裝到自己手機的版本（DEVINSTALL）都標 dev，查數據時排除
+    #if DEBUG || DEVINSTALL
     let dev = true
     #else
     let dev = false

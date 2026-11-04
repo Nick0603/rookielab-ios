@@ -1,8 +1,10 @@
 import SwiftUI
 import UIKit
 
-/// 分析棋盤的狀態：一條走法（從 startFen 開始），cursor 是目前看到第幾步。
-/// 在中間走了不同的棋，後面的就換成新的走法（跟 Lichess 分析板一樣，不留分支，保持簡單）
+/// 分析棋盤的狀態：一棵走法樹。plies 是目前看的那一條（從 startFen 開始），cursor 是看到第幾步。
+/// 每個局面記住所有走過的後續，順序是建立的先後：
+/// - 往下一步：照這個局面「最早」的那一步走（原本的對局，或最早岔出來的那條），不一定是剛剛看的那條
+/// - 在中間走了不同的棋：開一條新分支（舊的都留著）；分支走到底再往下，用引擎的最佳步接下去
 @MainActor @Observable
 final class AnalysisModel {
   private(set) var startFen: String
@@ -20,15 +22,40 @@ final class AnalysisModel {
 
   nonisolated static let standard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
+  /// 走法樹：局面（從開始到這裡的 UCI，用空白隔開）→ 走過的後續，照建立的先後
+  private var kids: [String: [Ply]] = [:]
+
   init(startFen: String = AnalysisModel.standard, plies: [Ply] = [], at: Int? = nil) {
     self.startFen = startFen
     self.plies = plies
     cursor = min(at ?? plies.count, plies.count)
+    register(plies)
+  }
+
+  private static func key(_ path: some Collection<Ply>) -> String { path.map(\.uci).joined(separator: " ") }
+  private func key(_ n: Int) -> String { Self.key(plies.prefix(n)) }
+
+  /// 把一條走法記進樹裡（已經有的不重複）
+  private func register(_ path: [Ply]) {
+    for i in path.indices {
+      let k = Self.key(path.prefix(i))
+      if kids[k]?.contains(where: { $0.uci == path[i].uci }) != true { kids[k, default: []].append(path[i]) }
+    }
+  }
+
+  /// 前 n 步不變，之後沿著每個局面最早的那一步接下去
+  private func earliestChain(from n: Int, first: Ply? = nil) -> [Ply] {
+    var path = Array(plies.prefix(n))
+    if let first { path.append(first) }
+    while let c = kids[Self.key(path)]?.first { path.append(c) }
+    return path
   }
 
   var fen: String { cursor == 0 ? startFen : plies[cursor - 1].fenAfter }
   var last: Ply? { cursor > 0 ? plies[cursor - 1] : nil }
   var next: Ply? { cursor < plies.count ? plies[cursor] : nil }
+  /// 目前分叉點已試走的續步（開局分析板用）。
+  var branches: [Ply] { kids[key(cursor)] ?? [] }
 
   func targets(_ from: String) -> [String] { FEN.targets(fen: fen, from: from) }
 
@@ -40,8 +67,17 @@ final class AnalysisModel {
 
   func move(_ from: String, _ to: String, promotion: String = "") {
     let uci = from + to + promotion
-    if let n = next, n.uci == uci { cursor += 1; Sounds.play(for: n); return }
+    let k = key(cursor)
+    // 走過的步：回到那條（後面接它最早的走法）
+    if let old = kids[k]?.first(where: { $0.uci == uci }) {
+      plies = earliestChain(from: cursor, first: old)
+      cursor += 1
+      Sounds.play(for: old)
+      return
+    }
+    // 新的步：開一條分支，舊的都留在樹裡
     guard let p = ChessLine.ply(fen: fen, uci: uci, index: cursor) else { return }
+    kids[k, default: []].append(p)
     plies = Array(plies.prefix(cursor)) + [p]
     cursor += 1
     Haptics.tick()
@@ -87,6 +123,18 @@ final class AnalysisModel {
   }
 
   func step(_ d: Int) {
+    if d == 1 {
+      // 這個局面最早的那一步不是目前這條的下一步（剛從別的分支退回來）：換回最早的那條
+      if let first = kids[key(cursor)]?.first, plies[safe: cursor]?.uci != first.uci {
+        plies = earliestChain(from: cursor)
+      }
+      // 這條走到底了：用引擎的最佳步接下去（記進樹裡）
+      if cursor == plies.count {
+        guard last?.isCheckmate != true, let u = lines.first?.best else { return }
+        play(uci: u)
+        return
+      }
+    }
     let n = min(max(0, cursor + d), plies.count)
     guard n != cursor else { return }
     let forward = n == cursor + 1
@@ -99,6 +147,7 @@ final class AnalysisModel {
     guard FEN.valid(fen) else { return false }
     startFen = fen
     plies = []
+    kids = [:]
     cursor = 0
     analyse()
     return true
@@ -108,6 +157,8 @@ final class AnalysisModel {
     guard let line = ChessLine(pgn: pgn) else { return false }
     startFen = line.startFen
     plies = line.plies
+    kids = [:]
+    register(plies)
     cursor = plies.count
     analyse()
     return true
@@ -186,9 +237,12 @@ struct AnalysisBoardView: View {
   private let returnLabel: String?
   @Environment(\.dismiss) private var dismiss
 
-  init(startFen: String = AnalysisModel.standard, line: [Ply] = [], at: Int? = nil, orientation: Side = .white, returnLabel: String? = nil) {
+  /// branch：從復盤拖子進來時走的那一步（UCI）；原本的對局留在樹裡，從這一步開分支
+  init(startFen: String = AnalysisModel.standard, line: [Ply] = [], at: Int? = nil, branch: String? = nil, orientation: Side = .white, returnLabel: String? = nil) {
     self.returnLabel = returnLabel
-    _model = State(initialValue: AnalysisModel(startFen: startFen, plies: line, at: at))
+    let m = AnalysisModel(startFen: startFen, plies: line, at: at)
+    if let branch { m.play(uci: branch) }
+    _model = State(initialValue: m)
     _flipped = State(initialValue: orientation == .black)
   }
 
@@ -236,7 +290,7 @@ struct AnalysisBoardView: View {
           }
           .buttonStyle(.plain)
         } else {
-          Button { model.step(-999) } label: { barIcon("backward.end", "回到開始") }.buttonStyle(.plain)
+          Button { model.step(-999) } label: { barIcon("backward.end", String(localized: "回到開始")) }.buttonStyle(.plain)
         }
         Button {
           Haptics.bump()
@@ -246,9 +300,9 @@ struct AnalysisBoardView: View {
             .background(Brand.orange, in: RoundedRectangle(cornerRadius: 12, style: .continuous)).foregroundStyle(.white)
         }
         .buttonStyle(.plain).disabled(model.lines.first?.best == nil)
-        Button { flipped.toggle() } label: { barIcon("arrow.up.arrow.down", "翻轉棋盤") }.buttonStyle(.plain)
-        RepeatButton(action: { model.step(-1) }) { barIcon("chevron.left", "上一步（按住快退）") }
-        RepeatButton(action: { model.step(1) }) { barIcon("chevron.right", "下一步（按住快轉）") }
+        Button { flipped.toggle() } label: { barIcon("arrow.up.arrow.down", String(localized: "翻轉棋盤")) }.buttonStyle(.plain)
+        RepeatButton(action: { model.step(-1) }) { barIcon("chevron.left", String(localized: "上一步（按住快退）")) }
+        RepeatButton(action: { model.step(1) }) { barIcon("chevron.right", String(localized: "下一步（按住快轉）")) }
       }
       .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 4)
       .background(.bar)
@@ -256,7 +310,7 @@ struct AnalysisBoardView: View {
     }
     .background(Brand.paper)
     .toolbar(returnLabel == nil ? .automatic : .hidden, for: .tabBar)
-    .navigationTitle(returnLabel == nil ? "分析" : "深入分析").navigationBarTitleDisplayMode(.inline)
+    .navigationTitle(returnLabel == nil ? String(localized: "分析") : String(localized: "深入分析")).navigationBarTitleDisplayMode(.inline)
     .navigationBarBackButtonHidden(returnLabel != nil)
     .toolbar {
       if let returnLabel {
@@ -333,7 +387,7 @@ struct AnalysisBoardView: View {
     VStack(alignment: .leading, spacing: 4) {
       HStack(spacing: 6) {
         Image(systemName: "cpu").font(.caption).foregroundStyle(.secondary)
-        Text(model.thinking ? "計算中・深度 \(model.depth)" : "深度 \(max(model.depth, 1))").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+        Text(model.thinking ? String(localized: "計算中・深度 \(model.depth)") : String(localized: "深度 \(max(model.depth, 1))")).font(.caption2).foregroundStyle(.secondary).monospacedDigit()
         if model.thinking { ProgressView().controlSize(.mini) }
         Spacer()
       }
@@ -344,7 +398,7 @@ struct AnalysisBoardView: View {
           Text(FEN.sanLine(fen: model.fen, pv: l.pv, max: 8).joined(separator: " ")).font(.caption.monospaced()).lineLimit(1).foregroundStyle(Brand.ink)
         }
       }
-      if model.lines.isEmpty { Text(model.last?.isCheckmate == true ? "將死" : "…").font(.caption).foregroundStyle(.secondary).frame(height: 40) }
+      if model.lines.isEmpty { Text(model.last?.isCheckmate == true ? String(localized: "將死") : "…").font(.caption).foregroundStyle(.secondary).frame(height: 40) }
     }
     .padding(10)
     .frame(minHeight: 78, alignment: .top)
@@ -353,7 +407,7 @@ struct AnalysisBoardView: View {
 
   /// 棋譜滾輪：左右滑，停在中間的那一步就是現在看的
   private var moveStrip: some View {
-    let items = [MoveWheel.Item(id: 0, number: nil, san: "開始")] + model.plies.enumerated().map { i, p in
+    let items = [MoveWheel.Item(id: 0, number: nil, san: String(localized: "開始"))] + model.plies.enumerated().map { i, p in
       MoveWheel.Item(id: i + 1, number: p.mover == .white ? "\(p.moveNumber)." : i == 0 ? "\(p.moveNumber)…" : nil, san: p.san)
     }
     return MoveWheel(items: items, selection: Binding(get: { model.cursor }, set: { model.cursor = $0 }))
@@ -383,7 +437,7 @@ struct CandidateStrip: View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 6) {
         if items.isEmpty {
-          Text(thinking ? "計算中…" : "沒有可以走的步").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 4)
+          Text(thinking ? String(localized: "計算中…") : String(localized: "沒有可以走的步")).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 4)
         }
         ForEach(items) { c in
           Button { play(c.uci) } label: {
@@ -411,7 +465,7 @@ struct CandidateStrip: View {
   private func detail(_ c: AnalysisModel.Candidate) -> String {
     var parts: [String] = []
     if let e = c.eval { parts.append(c.rank == 0 ? e : "\(e)・\(Grading.gapText(c.gap ?? 0))") }
-    if let s = c.share { parts.append("大家 \(s)%") }
+    if let s = c.share { parts.append(String(localized: "大家 \(s)%")) }
     return parts.joined(separator: " ")
   }
 }
@@ -429,7 +483,7 @@ struct PromotionPicker: View {
             Image("piece-\(white ? "w" : "b")\(k.uppercased())").resizable().frame(width: 56, height: 56)
               .padding(6).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
           }
-          .accessibilityLabel(Explain.pieceZh[k] ?? k)
+          .accessibilityLabel(Explain.pieceName(k))
         }
       }
     }

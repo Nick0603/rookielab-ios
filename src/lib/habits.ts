@@ -3,6 +3,7 @@ import type { AnalyzedGame } from './types';
 import { OPENING_MAX_MOVE, START_MINORS, openingNotes } from './lesson/opening';
 import { EN_PIECE, ZH_PIECE, VALUE, forkOf, label, looseTactics, pieceName, withTurn, type PieceRef } from './lesson/tactics';
 import type { Bi, Lang } from './i18n/lang';
+import { cap as capital, def as defArt, genderOf, indef as indefArt, mkT, ownAt } from './i18n/gen';
 
 /**
  * 口語化的問題分類：出子太慢、王沒入堡、被捉雙時救錯子……
@@ -221,14 +222,15 @@ export interface OpeningVerdict {
  * 而且走完不能留下沒人保護、會被吃的子。
  */
 export function judgeOpeningMove(fen: string, from: string, to: string, lang: Lang = 'zh'): OpeningVerdict {
-  const t = (zh: string, en: string) => (lang !== 'zh' ? en : zh);
+  const t = mkT(lang);
+  const rl = lang === 'pt' ? 'pt' : 'es';
   const before = new Chess(fen);
   const board = new Chess(fen);
   let m: Move;
   try {
     m = board.move({ from, to, promotion: 'q' });
   } catch {
-    return { ok: false, why: t('這步不合法。', 'That move is not legal.') };
+    return { ok: false, why: t('這步不合法。', 'That move is not legal.', 'Esa jugada no es legal.', 'Esse lance não é legal.') };
   }
   const me = m.color;
   const san = m.san;
@@ -237,35 +239,35 @@ export function judgeOpeningMove(fen: string, from: string, to: string, lang: La
   const newlyHanging = looseTactics(board, me, me).find((x) => x.tag === 'hanging' && !hangingBefore.has(x.squares[0]));
   if (newlyHanging) {
     const n = pieceName(newlyHanging.pieces[0], lang);
-    return { ok: false, san, why: t(`${n}沒人保護，對手可以直接吃。`, `Your ${n} is left undefended and can be taken for free.`) };
+    return { ok: false, san, why: t(`${n}沒人保護，對手可以直接吃。`, `Your ${n} is left undefended and can be taken for free.`, `${capital(ownAt(rl, true, newlyHanging.pieces[0].type, newlyHanging.pieces[0].square))} queda sin defensa y se puede capturar gratis.`, `${capital(ownAt(rl, true, newlyHanging.pieces[0].type, newlyHanging.pieces[0].square))} fica sem proteção e pode ser capturad${genderOf(rl, newlyHanging.pieces[0].type) === 'f' ? 'a' : 'o'} de graça.`) };
   }
 
-  if (before.isCheck()) return { ok: true, san, why: t('先解除將軍。', 'Getting out of check comes first.') };
-  if (isCastle(m)) return { ok: true, san, why: t('入堡：王離開中間，車也出來了。', 'Castling: the king leaves the center and the rook comes into play.') };
+  if (before.isCheck()) return { ok: true, san, why: t('先解除將軍。', 'Getting out of check comes first.', 'Primero hay que salir del jaque.', 'Primeiro é preciso sair do xeque.') };
+  if (isCastle(m)) return { ok: true, san, why: t('入堡：王離開中間，車也出來了。', 'Castling: the king leaves the center and the rook comes into play.', 'Enroque: el rey sale del centro y la torre entra en juego.', 'Roque: o rei sai do centro e a torre entra em jogo.') };
   if (m.captured && VALUE[m.captured] >= 3 && before.attackers(m.to, me === 'w' ? 'b' : 'w').length === 0) {
-    return { ok: true, san, why: t(`吃到沒人保護的${ZH_PIECE[m.captured]}。`, `Wins an undefended ${EN_PIECE[m.captured]}.`) };
+    return { ok: true, san, why: t(`吃到沒人保護的${ZH_PIECE[m.captured]}。`, `Wins an undefended ${EN_PIECE[m.captured]}.`, `Gana ${indefArt(rl, m.captured)} sin defensa.`, `Ganha ${indefArt(rl, m.captured)} sem proteção.`) };
   }
 
   const fromHome = START_MINORS[me].some(([sq, p]) => sq === m.from && p === m.piece);
   if (fromHome) {
     return 'ah'.includes(m.to[0])
-      ? { ok: false, san, why: t('馬跳到邊線，能控制的格子少。', 'A knight on the rim controls few squares.') }
-      : { ok: true, san, why: t(`${pieceName(label(m.to, m.piece))}從原位出動。`, `Develops the ${EN_PIECE[m.piece]} from its starting square.`) };
+      ? { ok: false, san, why: t('馬跳到邊線，能控制的格子少。', 'A knight on the rim controls few squares.', 'Un caballo en el borde controla pocas casillas.', 'Um cavalo na borda controla poucas casas.') }
+      : { ok: true, san, why: t(`${pieceName(label(m.to, m.piece))}從原位出動。`, `Develops the ${EN_PIECE[m.piece]} from its starting square.`, `Desarrolla ${defArt(rl, m.piece)} desde su casilla inicial.`, `Desenvolve ${defArt(rl, m.piece)} da sua casa inicial.`) };
   }
-  if (m.piece === 'q') return { ok: false, san, why: t('后先不動，先出馬和象。', 'Keep the queen home for now; develop knights and bishops first.') };
-  if (m.piece === 'k') return { ok: false, san, why: t('動王會失去入堡權。', 'Moving the king gives up castling.') };
-  if (m.piece === 'r') return { ok: false, san, why: t('車先不動，入堡之後車自然就出來了。', 'Leave the rook for now; castling brings it into play.') };
+  if (m.piece === 'q') return { ok: false, san, why: t('后先不動，先出馬和象。', 'Keep the queen home for now; develop knights and bishops first.', 'Mantén la dama en casa por ahora; primero desarrolla caballos y alfiles.', 'Mantenha a dama em casa por enquanto; desenvolva primeiro cavalos e bispos.') };
+  if (m.piece === 'k') return { ok: false, san, why: t('動王會失去入堡權。', 'Moving the king gives up castling.', 'Mover el rey hace perder el derecho a enrocar.', 'Mover o rei faz perder o direito ao roque.') };
+  if (m.piece === 'r') return { ok: false, san, why: t('車先不動，入堡之後車自然就出來了。', 'Leave the rook for now; castling brings it into play.', 'Deja la torre por ahora; al enrocar entra en juego.', 'Deixe a torre por enquanto; com o roque ela entra em jogo.') };
   if (m.piece === 'p') {
     const blocks = START_MINORS[me].some(([sq, p]) =>
       p === 'b' && bishopMobility(fen, me, sq) >= BISHOP_OPEN && bishopMobility(board.fen(), me, sq) <= BISHOP_SHUT);
-    if (blocks) return { ok: false, san, why: t('這個兵擋住了還沒出動的象。', 'This pawn blocks a bishop that has not come out yet.') };
+    if (blocks) return { ok: false, san, why: t('這個兵擋住了還沒出動的象。', 'This pawn blocks a bishop that has not come out yet.', 'Este peón bloquea un alfil que aún no ha salido.', 'Este peão bloqueia um bispo que ainda não saiu.') };
     const homeRank = me === 'w' ? '2' : '7';
     if ('de'.includes(m.from[0]) && m.from[1] === homeRank) {
-      return { ok: true, san, why: t('推中心兵，佔中心，也讓象出得來。', 'A center pawn move takes space and opens a path for a bishop.') };
+      return { ok: true, san, why: t('推中心兵，佔中心，也讓象出得來。', 'A center pawn move takes space and opens a path for a bishop.', 'Un peón central gana espacio y abre camino a un alfil.', 'Um peão central ganha espaço e abre caminho para um bispo.') };
     }
-    return { ok: false, san, why: t('這步沒有出新的子。', 'This move does not bring out a new piece.') };
+    return { ok: false, san, why: t('這步沒有出新的子。', 'This move does not bring out a new piece.', 'Esta jugada no desarrolla ninguna pieza nueva.', 'Este lance não desenvolve nenhuma peça nova.') };
   }
-  return { ok: false, san, why: t('這個子已經出動過，先出還沒動的子。', 'This piece has already moved; bring out one that has not.') };
+  return { ok: false, san, why: t('這個子已經出動過，先出還沒動的子。', 'This piece has already moved; bring out one that has not.', 'Esta pieza ya se movió; saca una que aún no lo haya hecho.', 'Esta peça já se moveu; desenvolva uma que ainda não se moveu.') };
 }
 
 /** 符合原則的步，給答錯時參考。沒有任何一步符合的局面不適合拿來練 */
