@@ -6,7 +6,7 @@ struct OpeningPracticeView: View {
   @State private var profiles: [OpeningProfile] = []
   @State private var scanning = false
   @State private var review = OpeningReviewStore.shared
-  private var account: String { app.account?.id ?? "local" }
+  private var account: String { OpeningRoute.learner }
 
   var body: some View {
     List {
@@ -19,7 +19,7 @@ struct OpeningPracticeView: View {
         }
       }
       Section {
-        if let current = app.account {
+        if let current = app.account, !app.usingImported {
           Picker("帳號", selection: Binding(get: { current }, set: { app.use($0) })) {
             ForEach(app.accounts) { a in Text("\(a.platform.name) · \(a.username)").tag(a) }
           }
@@ -32,7 +32,8 @@ struct OpeningPracticeView: View {
           if !scanning && profiles.isEmpty { Text("目前沒有可整理的對局，仍可從分析板開始探索。").font(.subheadline).foregroundStyle(.secondary) }
         } else {
           NavigationLink("新增 Chess.com／Lichess 帳號") { OpeningAccountView() }
-          Text("還沒設定帳號也可以探索開局、選一條路線自己練。").font(.caption).foregroundStyle(.secondary)
+          Text(app.games.isEmpty ? String(localized: "不用帳號也可以學習開局。") : String(localized: "目前整理的是匯入的對局。")).font(.caption).foregroundStyle(.secondary)
+          Picker("最近對局", selection: $count) { Text("10 局").tag(10); Text("20 局").tag(20) }.pickerStyle(.segmented)
         }
       } header: { Text("你的開局") } footer: { Text("使用同一種時間制的最近對局。熟悉度只描述理論走法，不代表棋力；離開理論不等於走錯。") }
       if let suggested = profiles.first(where: { $0.games >= 3 && $0.leftByMe * 2 >= $0.games }) {
@@ -94,6 +95,9 @@ struct OpeningDetailView: View {
     List {
       Section {
         Text(profile.status).foregroundStyle(Brand.orange)
+        if let course = OpeningCourse.all.first(where: { $0.side == profile.side && ($0.family.text == profile.family || profile.family.contains($0.family.text)) }) {
+          NavigationLink { OpeningCourseView(course: course) } label: { Label("學這個開局", systemImage: "graduationcap.fill").foregroundStyle(Brand.orange) }
+        }
         Text("\(profile.games) 局：\(profile.wins) 勝、\(profile.draws) 和、\(profile.games - profile.wins - profile.draws) 負")
         Text("你先離開理論 \(profile.leftByMe) 次，對手先離開 \(profile.leftByOpponent) 次。").font(.subheadline).foregroundStyle(.secondary)
         NavigationLink { OpeningAnalysisView(line: profile.line, side: profile.side, account: account) } label: { Label("探索這個開局", systemImage: "square.grid.3x3") }
@@ -134,7 +138,7 @@ struct OpeningAnalysisView: View {
   }
   private var path: [Ply] { Array(model.plies.prefix(model.cursor)) }
   private var canPractice: Bool {
-    !path.isEmpty && path.count <= 24 && path.contains { $0.mover == side } && OpeningBook.shared.isTheory(path)
+    !path.isEmpty && path.count <= 24 && path.contains { $0.mover == side } && (OpeningBook.shared.isTheory(path) || OpeningCourse.contains(path.map(\.uci)))
   }
   private var route: OpeningRoute {
     .init(account: account, name: OpeningBook.shared.position(model.fen).map { Openings.name($0.name) } ?? String(localized: "我的開局路線"), side: side, moves: path.map(\.uci))
@@ -142,15 +146,19 @@ struct OpeningAnalysisView: View {
   var body: some View {
     GeometryReader { geo in
       VStack(spacing: 8) {
-        ZStack {
-          BoardView(fen: model.fen, flipped: flipped, highlight: model.last.map { [$0.from, $0.to] } ?? [], legalTargets: { model.targets($0) }, onMove: { from, to in
-            if model.needsPromotion(from, to) { promotion = (from, to) } else { model.move(from, to) }
-          })
-          if let promotion { PromotionPicker(white: FEN.sideToMove(model.fen) == .white) { choice in
-            if let choice { model.move(promotion.0, promotion.1, promotion: choice) }; self.promotion = nil
-          } }
+        HStack(spacing: 6) {
+          EvalBar(white: model.whiteWin, flipped: flipped)
+          ZStack {
+            BoardView(fen: model.fen, flipped: flipped, highlight: model.last.map { [$0.from, $0.to] } ?? [], legalTargets: { model.targets($0) }, onMove: { from, to in
+              if model.needsPromotion(from, to) { promotion = (from, to) } else { model.move(from, to) }
+            })
+            if let promotion { PromotionPicker(white: FEN.sideToMove(model.fen) == .white) { choice in
+              if let choice { model.move(promotion.0, promotion.1, promotion: choice) }; self.promotion = nil
+            } }
+          }
+          .frame(width: min(geo.size.width - 44, geo.size.height * 0.49), height: min(geo.size.width - 44, geo.size.height * 0.49))
         }
-        .frame(width: min(geo.size.width - 28, geo.size.height * 0.49), height: min(geo.size.width - 28, geo.size.height * 0.49))
+        .frame(height: min(geo.size.width - 44, geo.size.height * 0.49))
         ScrollView {
           VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -242,31 +250,56 @@ struct OpeningAddButton: View {
 struct OpeningExerciseView: View {
   @State private var exercise: OpeningExercise
   @State private var recorded = false
+  @State private var evaluation: EngineLine?
+  @State private var evaluatedFen: String?
+  @State private var evaluating = false
   @State private var showAnalysis = false
   @State private var promotion: (String, String)?
   @Environment(\.dismiss) private var dismiss
   private let review: Bool
   private let completion: (() -> Void)?
-  init(route: OpeningRoute, review: Bool, completion: (() -> Void)? = nil) {
-    _exercise = State(initialValue: OpeningExercise(route: route)); self.review = review; self.completion = completion
+  private let title: String?
+  private let onResult: ((OpeningRoute, Bool) -> Void)?
+  private let onProgress: ((OpeningRoute, Int, Bool) -> Void)?
+  init(route: OpeningRoute, review: Bool, completion: (() -> Void)? = nil, alternatives: [OpeningRoute] = [], at: Int = 0, clean: Bool = true,
+       title: String? = nil, onResult: ((OpeningRoute, Bool) -> Void)? = nil, onProgress: ((OpeningRoute, Int, Bool) -> Void)? = nil) {
+    _exercise = State(initialValue: OpeningExercise(route: route, alternatives: alternatives, at: at, clean: clean))
+    self.review = review; self.completion = completion; self.title = title; self.onResult = onResult; self.onProgress = onProgress
+  }
+  private var whiteWin: Double {
+    guard evaluatedFen == exercise.fen, let evaluation else { return 0.5 }
+    let win = Grading.winProb(evaluation)
+    return FEN.sideToMove(exercise.fen) == .white ? win : 1 - win
   }
   var body: some View {
     GeometryReader { geo in
       VStack(spacing: 12) {
         ProgressView(value: Double(exercise.completed), total: Double(max(1, exercise.total))).tint(Brand.orange).padding(.horizontal)
         Text("已走 \(exercise.completed)／\(exercise.total) 步").font(.caption).foregroundStyle(.secondary)
-        ZStack {
-          BoardView(fen: exercise.fen, flipped: exercise.route.side == .black,
-            arrows: exercise.hint && !exercise.finished ? exercise.expected.map { [Arrow(from: $0.from, to: $0.to, color: Brand.orange)] } ?? [] : [],
-            legalTargets: { exercise.finished ? [] : FEN.targets(fen: exercise.fen, from: $0) },
-            onMove: { from, to in
-              if FEN.pieces(exercise.fen)[from]?.last == "P" && (to.hasSuffix("8") || to.hasSuffix("1")) { promotion = (from, to) }
-              else { exercise.move(from + to) }
-            })
-          if let promotion { PromotionPicker(white: FEN.sideToMove(exercise.fen) == .white) { choice in
-            if let choice { exercise.move(promotion.0 + promotion.1 + choice) }; self.promotion = nil
-          } }
-        }.frame(width: min(geo.size.width - 28, geo.size.height * 0.55), height: min(geo.size.width - 28, geo.size.height * 0.55))
+        HStack(spacing: 6) {
+          EvalBar(white: whiteWin, flipped: exercise.route.side == .black)
+          ZStack {
+            BoardView(fen: exercise.fen, flipped: exercise.route.side == .black,
+              arrows: exercise.hint && !exercise.finished ? exercise.expected.map { [Arrow(from: $0.from, to: $0.to, color: Brand.orange)] } ?? [] : [],
+              legalTargets: { exercise.finished ? [] : FEN.targets(fen: exercise.fen, from: $0) },
+              onMove: { from, to in
+                if FEN.pieces(exercise.fen)[from]?.last == "P" && (to.hasSuffix("8") || to.hasSuffix("1")) { promotion = (from, to) }
+                else { exercise.move(from + to) }
+              })
+            if let promotion { PromotionPicker(white: FEN.sideToMove(exercise.fen) == .white) { choice in
+              if let choice { exercise.move(promotion.0 + promotion.1 + choice) }; self.promotion = nil
+            } }
+          }.frame(width: min(geo.size.width - 44, geo.size.height * 0.55), height: min(geo.size.width - 44, geo.size.height * 0.55))
+        }
+        .frame(height: min(geo.size.width - 44, geo.size.height * 0.55))
+        HStack(spacing: 6) {
+          if let evaluation, evaluatedFen == exercise.fen {
+            let sign = FEN.sideToMove(exercise.fen) == .white ? 1 : -1
+            Text(Grading.evalText(cp: evaluation.cp.map { $0 * sign }, mate: evaluation.mate.map { $0 * sign })).monospacedDigit().bold()
+          } else if evaluating { ProgressView().controlSize(.mini) }
+          else { Text("—") }
+          Text("白方視角・＋是白方較好").foregroundStyle(.secondary)
+        }.font(.caption)
         ScrollView {
           VStack(spacing: 12) {
             if exercise.finished {
@@ -290,18 +323,31 @@ struct OpeningExerciseView: View {
         }
       }.frame(maxWidth: .infinity).padding(12).background(.bar)
     }
-    .background(Brand.paper).navigationTitle(exercise.route.name).navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar)
+    .background(Brand.paper).navigationTitle(title ?? exercise.route.name).navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .tabBar)
     .sheet(isPresented: $showAnalysis) {
       NavigationStack {
         OpeningAnalysisView(line: exercise.plies, side: exercise.route.side, account: exercise.route.account, at: exercise.cursor)
           .toolbar { ToolbarItem(placement: .confirmationAction) { Button("回到練習") { showAnalysis = false } } }
       }
     }
+    .task(id: "\(exercise.fen):\(showAnalysis)") {
+      evaluation = nil; evaluatedFen = nil; evaluating = false
+      guard !showAnalysis else { return }
+      let fen = exercise.fen; evaluating = true
+      try? await Task.sleep(for: .milliseconds(100))
+      guard !Task.isCancelled else { return }
+      let lines = await StockfishService.shared.analyse(fen: fen, nodes: 150_000, multipv: 1, priority: .interactive)
+      guard !Task.isCancelled, fen == exercise.fen, !showAnalysis else { return }
+      evaluation = lines.first; evaluatedFen = fen; evaluating = false
+    }
     .onChange(of: exercise.finished, initial: true) { _, finished in
       guard finished, !recorded else { return }; recorded = true
       if review || OpeningReviewStore.shared.has(exercise.route) { OpeningReviewStore.shared.answer(exercise.route.id, clean: exercise.clean) }
+      onResult?(exercise.route, exercise.clean)
       ReviewStore.shared.markPracticed()
     }
+    .onChange(of: exercise.cursor) { _, value in onProgress?(exercise.route, value, exercise.clean) }
+    .onChange(of: exercise.clean) { _, value in onProgress?(exercise.route, exercise.cursor, value) }
   }
 }
 
@@ -352,7 +398,7 @@ struct OpeningReportEntryView: View {
   }
 }
 
-private struct OpeningAccountView: View {
+struct OpeningAccountView: View {
   @Environment(AppModel.self) private var app
   @Environment(\.dismiss) private var dismiss
   @State private var platform = Platform.chesscom

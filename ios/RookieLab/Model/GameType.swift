@@ -16,6 +16,7 @@ struct GameType: Hashable, Identifiable {
     case "rapid": String(localized: "快棋")
     case "blitz": String(localized: "閃電棋")
     case "bullet": String(localized: "子彈棋")
+    case "imported": String(localized: "匯入對局")
     case "daily": String(localized: "每日棋")
     case "classical": String(localized: "慢棋")
     default: tc

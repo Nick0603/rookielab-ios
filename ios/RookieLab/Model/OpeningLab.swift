@@ -95,6 +95,7 @@ struct OpeningProfile: Identifiable {
 
 /// 一條可獨立複習的理論路線。帳號、顏色、完整走法相同才合併。
 struct OpeningRoute: Codable, Identifiable, Hashable {
+  static let learner = "learner"
   let account: String
   let name: String
   let side: Side
@@ -112,14 +113,14 @@ struct OpeningRoute: Codable, Identifiable, Hashable {
   var valid: Bool {
     guard !moves.isEmpty, moves.count <= 24 else { return false }
     let line = plies
-    return line.count == moves.count && line.contains { $0.mover == side } && OpeningBook.shared.isTheory(line)
+    return line.count == moves.count && line.contains { $0.mover == side } && (OpeningBook.shared.isTheory(line) || OpeningCourse.contains(moves))
   }
 }
 
 @MainActor @Observable
 final class OpeningReviewStore {
   struct Card: Codable, Identifiable, Equatable {
-    let route: OpeningRoute
+    var route: OpeningRoute
     var due: Int
     var streak = 0
     var reps = 0
@@ -130,15 +131,17 @@ final class OpeningReviewStore {
     var id: String { route.id }
     @MainActor var mastered: Bool { streak >= ReviewStore.graduate }
   }
-  static let shared = OpeningReviewStore()
+  static let shared = OpeningReviewStore(learnerScope: true)
   private(set) var cards: [Card] = []
   private let defaults: UserDefaults?
   private let sync: Bool
+  private let learnerScope: Bool
   private var observer: NSObjectProtocol?
   private static let key = "opening-review.v1"
-  init(defaults: UserDefaults? = .standard, sync: Bool = true) {
-    self.defaults = defaults; self.sync = sync
+  init(defaults: UserDefaults? = .standard, sync: Bool = true, learnerScope: Bool = false) {
+    self.defaults = defaults; self.sync = sync; self.learnerScope = learnerScope
     if let data = defaults?.data(forKey: Self.key), let saved = try? JSONDecoder().decode([Card].self, from: data) { cards = saved }
+    if learnerScope { cards = Self.migrate(cards) }
     if sync {
       observer = NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: NSUbiquitousKeyValueStore.default, queue: .main) { [weak self] _ in
         MainActor.assumeIsolated { self?.mergeCloud() }
@@ -146,12 +149,14 @@ final class OpeningReviewStore {
       NSUbiquitousKeyValueStore.default.synchronize()
       mergeCloud()
     }
+    if learnerScope { save() }
   }
   private func mergeCloud() {
     guard let data = NSUbiquitousKeyValueStore.default.data(forKey: Self.key),
           let remote = try? JSONDecoder().decode([Card].self, from: (try? (data as NSData).decompressed(using: .zlib) as Data) ?? data) else { return }
+    let incoming = learnerScope ? Self.migrate(remote) : remote
     var merged = Dictionary(cards.map { ($0.id, $0) }, uniquingKeysWith: { a, b in a.updated >= b.updated ? a : b })
-    for card in remote where merged[card.id].map({ $0.updated < card.updated }) ?? true { merged[card.id] = card }
+    for card in incoming where merged[card.id].map({ $0.updated < card.updated }) ?? true { merged[card.id] = card }
     let result = merged.values.sorted { $0.id < $1.id }
     guard result != cards.sorted(by: { $0.id < $1.id }) else { return }
     cards = result; save()
@@ -165,24 +170,45 @@ final class OpeningReviewStore {
       NSUbiquitousKeyValueStore.default.set(compressed, forKey: Self.key)
     }
   }
-  func active(account: String) -> [Card] { cards.filter { $0.route.account == account && !$0.removed } }
+  static func migrate(_ input: [Card]) -> [Card] {
+    var result: [String: Card] = [:]
+    for original in input {
+      var card = original
+      card.route = OpeningRoute(account: OpeningRoute.learner, name: original.route.name, side: original.route.side, moves: original.route.moves)
+      if result[card.id].map({ $0.updated < card.updated }) ?? true { result[card.id] = card }
+    }
+    return result.values.sorted { $0.id < $1.id }
+  }
+  private func scoped(_ route: OpeningRoute) -> OpeningRoute {
+    learnerScope ? .init(account: OpeningRoute.learner, name: route.name, side: route.side, moves: route.moves) : route
+  }
+  func active(account: String) -> [Card] { cards.filter { (learnerScope || $0.route.account == account) && !$0.removed } }
   func due(account: String, today: Int = Day.number()) -> [Card] {
     active(account: account).filter { !$0.mastered && $0.due <= today && ($0.lastDay.map { today - $0 >= ReviewStore.minimumInterval } ?? true) }
       .sorted { $0.due == $1.due ? $0.id < $1.id : $0.due < $1.due }
   }
-  func has(_ route: OpeningRoute) -> Bool { cards.contains { $0.id == route.id && !$0.removed } }
+  func has(_ route: OpeningRoute) -> Bool { cards.contains { $0.id == scoped(route).id && !$0.removed } }
   @discardableResult func add(_ route: OpeningRoute, today: Int = Day.number()) -> Bool {
+    let route = scoped(route)
     guard route.valid, !has(route) else { return false }
     if let i = cards.firstIndex(where: { $0.id == route.id }) { cards[i].removed = false; cards[i].updated = Date() }
     else { cards.append(Card(route: route, due: today)) }
     save(); return true
   }
+  private func resolved(_ id: String) -> String {
+    guard learnerScope else { return id }
+    let parts = id.split(separator: ":")
+    guard parts.count >= 3 else { return id }
+    return OpeningRoute.learner + ":" + parts.suffix(2).joined(separator: ":")
+  }
   func remove(_ id: String) {
+    let id = resolved(id)
     guard let i = cards.firstIndex(where: { $0.id == id }) else { return }
     cards[i].removed = true; cards[i].updated = Date(); save()
   }
   /// 提前加練不增加記憶連對數；看過提示／走偏後完成仍記為需要複習。
   func answer(_ id: String, clean: Bool, today: Int = Day.number()) {
+    let id = resolved(id)
     guard let i = cards.firstIndex(where: { $0.id == id }), !cards[i].removed else { return }
     if clean && (cards[i].due > today || (cards[i].lastDay.map { today - $0 < ReviewStore.minimumInterval } ?? false)) { return }
     cards[i].reps += 1; cards[i].lastDay = today; cards[i].streak = clean ? cards[i].streak + 1 : 0
@@ -193,14 +219,18 @@ final class OpeningReviewStore {
 
 @MainActor @Observable
 final class OpeningExercise {
-  let route: OpeningRoute
-  let plies: [Ply]
+  private(set) var route: OpeningRoute
+  private(set) var plies: [Ply]
+  private let alternatives: [OpeningRoute]
   private(set) var cursor = 0
   private(set) var clean = true
   private(set) var finished = false
   var feedback: String?
   var hint = false
-  init(route: OpeningRoute) { self.route = route; plies = route.plies; advanceOpponent() }
+  init(route: OpeningRoute, alternatives: [OpeningRoute] = [], at: Int = 0, clean: Bool = true) {
+    self.route = route; plies = route.plies; self.alternatives = alternatives; self.clean = clean
+    cursor = min(max(0, at), plies.count); advanceOpponent()
+  }
   var fen: String { cursor == 0 ? AnalysisModel.standard : plies[cursor - 1].fenAfter }
   var expected: Ply? { plies[safe: cursor] }
   var completed: Int { plies.prefix(cursor).filter { $0.mover == route.side }.count }
@@ -211,6 +241,12 @@ final class OpeningExercise {
   }
   func move(_ uci: String) {
     guard !finished, let expected, ChessLine.ply(fen: fen, uci: uci, index: cursor) != nil else { return }
+    if uci != expected.uci, let other = alternatives.first(where: { candidate in
+      candidate.side == route.side && candidate.moves.count > cursor && Array(candidate.moves.prefix(cursor)) == Array(route.moves.prefix(cursor)) && candidate.moves[cursor] == uci
+    }) {
+      route = other; plies = other.plies
+      move(uci); return
+    }
     guard uci == expected.uci else {
       clean = false
       let inBook = OpeningBook.shared.candidates(fen).contains { $0.uci == uci }

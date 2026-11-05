@@ -246,11 +246,11 @@ struct ReportView: View {
   @State private var drillSession: PracticeView.Session?
   @State private var paywall = false
 
-  private var types: [GameType] { GameType.types(app.games) }
-  private var currentKey: String? { model.typeKey ?? GameType.pick(app.games) }
+  private var types: [GameType] { GameType.types(app.reportGames) }
+  private var currentKey: String? { model.typeKey ?? GameType.pick(app.reportGames) }
 
   /// 還沒分析完（或還沒開始）：整頁只有載入畫面——不疊在清單上（半透明時會看到後面一直在跳）
-  private var loadingReport: Bool { app.games.isEmpty || model.running || !model.ran }
+  private var loadingReport: Bool { app.reportGames.isEmpty || model.running || !model.ran }
 
   var body: some View {
     ZStack {
@@ -283,15 +283,15 @@ struct ReportView: View {
         }
       }
     }
-    .onAppear { model.run(app.games); AppLog.add("open", "report \(model.digests.count)") }
-    .onChange(of: app.games.count) { model.run(app.games) }
-    .onChange(of: model.typeKey) { model.run(app.games) }
-    .onChange(of: model.count) { model.run(app.games) }
+    .onAppear { model.run(app.reportGames); AppLog.add("open", "report \(model.digests.count)") }
+    .onChange(of: app.reportGames.count) { model.run(app.reportGames) }
+    .onChange(of: model.typeKey) { model.run(app.reportGames) }
+    .onChange(of: model.count) { model.run(app.reportGames) }
   }
 
   private var content: some View {
     List {
-      if app.games.isEmpty {
+      if app.reportGames.isEmpty {
         Section { HStack { ProgressView(); Text("載入對局…").foregroundStyle(.secondary) } }
       } else {
         if !model.digests.isEmpty { exportSection }
@@ -557,8 +557,8 @@ struct ReportView: View {
       if let theme {
         Button {
           Task {
-            let items = await PuzzleBank.fetch(theme, rating: app.games.first?.myRating, platform: app.account?.platform ?? .chesscom, n: PracticeView.daily)
-            let rating = app.games.first?.myRating, platform = app.account?.platform ?? .chesscom
+            let items = await PuzzleBank.fetch(theme, rating: app.reportGames.first?.myRating, platform: app.account?.platform ?? .chesscom, n: PracticeView.daily)
+            let rating = app.reportGames.first?.myRating, platform = app.account?.platform ?? .chesscom
             if !items.isEmpty { drillSession = PracticeView.Session(title: theme.name, items: items) { await PuzzleBank.fetch(theme, rating: rating, platform: platform) } }
           }
         } label: {

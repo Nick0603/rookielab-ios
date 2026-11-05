@@ -12,7 +12,17 @@ final class AppModel {
   private(set) var error: String?
   /// 已分析過的局 → 我的準確率（列表上顯示）
   private(set) var accuracy: [String: Double] = [:]
-  var tab: AppTab = .games
+  var tab: AppTab = .openings { didSet { UserDefaults.standard.set(tab.rawValue, forKey: "lastAppTab") } }
+  var showReport = false
+  private(set) var usingImported = false
+  private var imported = ImportedGames.load()
+  var reportGames: [GameSummary] { games.filter { $0.termination != "unfinished" } }
+  var sourceID: String { usingImported ? "imported" : account?.id ?? "guest" }
+  func useImported() { usingImported = true; UserDefaults.standard.set("imported", forKey: "gameSource"); games = imported; error = nil; refreshAccuracy() }
+  func addImported(_ game: GameSummary) {
+    if !imported.contains(where: { $0.id == game.id }) { imported.insert(game, at: 0); ImportedGames.save(imported) }
+    useImported(); showReport = false; tab = .games; openGame = game
+  }
   /// 分享進來、要直接打開的那一局
   var openGame: GameSummary?
   /// Siri／捷徑、小工具要直接開始今天的練習（練習分頁看到就開始）
@@ -27,7 +37,7 @@ final class AppModel {
       tab = .practice
       startPractice = true
     case .latestGame:
-      tab = .games
+      tab = .games; showReport = false
       if let g = games.first { openGame = g } else { openLatestWhenLoaded = true }
     }
   }
@@ -46,9 +56,9 @@ final class AppModel {
     }
   }
 
-  init() {
-    account = AccountStore.current
-    accounts = AccountStore.all()
+  init(restore: Bool = true) {
+    account = restore ? AccountStore.current : nil
+    accounts = restore ? AccountStore.all() : []
     #if DEBUG
     let args = ProcessInfo.processInfo.arguments
     if let i = args.firstIndex(of: "-demo"), i + 1 < args.count {
@@ -62,10 +72,11 @@ final class AppModel {
       }
     }
     #endif
-    if account != nil { Task { await load() } }
+    if restore, let saved = UserDefaults.standard.string(forKey: "lastAppTab"), let previous = AppTab(rawValue: saved) { tab = previous == .report ? .games : previous; showReport = previous == .report }
+    if account != nil && UserDefaults.standard.string(forKey: "gameSource") != "imported" { Task { await load() } } else { useImported() }
     #if DEBUG
     // 開發用：-tab report|practice|analysis|me 直接開那個分頁（練習的示範參數也會切過去）
-    if let i = args.firstIndex(of: "-tab"), i + 1 < args.count, let t = ["games": AppTab.games, "report": .report, "practice": .practice, "analysis": .analysis, "me": .me][args[i + 1]] { tab = t }
+    if let i = args.firstIndex(of: "-tab"), i + 1 < args.count, let t = ["games": AppTab.games, "report": .games, "openings": .openings, "practice": .practice, "analysis": .analysis, "me": .me][args[i + 1]] { tab = t; showReport = args[i + 1] == "report" }
     if args.contains("-demoPuzzle") || args.contains("-demoLesson") { tab = .practice }
     // 開發用：-import <對局連結> 模擬從分享延伸打開
     if let i = args.firstIndex(of: "-import"), i + 1 < args.count {
@@ -79,10 +90,12 @@ final class AppModel {
   private(set) var accounts: [Account] = []
 
   func use(_ a: Account) {
+    usingImported = false; UserDefaults.standard.set(a.id, forKey: "gameSource"); games = []; loading = false
     AccountStore.remember(a)
     AccountStore.current = a
     accounts = AccountStore.all()
     account = a
+    if games.isEmpty { Task { await load() } }
   }
 
   /// 刪掉一個帳號：刪的是目前用的就換到下一個，都沒了就回到第一次使用的畫面（分析過的棋局存檔不刪，別的帳號可能也用得到）
@@ -92,6 +105,7 @@ final class AppModel {
     if account?.id == a.id {
       account = accounts.first
       AccountStore.current = account
+      if account == nil { useImported() }
     }
   }
 
@@ -102,7 +116,7 @@ final class AppModel {
 
   /// 對局列表：先顯示上次存的（馬上有東西），再到背景抓最新的；第一次用先抓 30 局，再補到 100 局
   func load() async {
-    guard let a = account, !loading else { return }
+    guard !usingImported, let a = account, !loading else { return }
     loading = true
     if games.isEmpty, let cached = GameCache.load(a) {
       games = cached
@@ -110,11 +124,12 @@ final class AppModel {
     }
     do {
       if games.isEmpty {
-        games = try await GameSources.recentGames(a, limit: 30)
-        refreshAccuracy()
+        let recent = try await GameSources.recentGames(a, limit: 30)
+        guard account == a, !usingImported else { loading = false; return }
+        games = recent; refreshAccuracy()
       }
       let all = try await GameSources.recentGames(a, limit: 100)
-      guard account == a else { loading = false; return }
+      guard account == a, !usingImported else { loading = false; return }
       games = all
       GameCache.save(all, for: a)
       WidgetBridge.update(latest: all.first)
@@ -125,6 +140,7 @@ final class AppModel {
       // 新對局（最近 3 天、還沒分析過）自動在背景分析，失誤加進複習
       AutoAnalyzer.shared.start(games) { [weak self] in self?.refreshAccuracy() }
     } catch {
+      guard account == a, !usingImported else { loading = false; return }
       self.error = (error as? LocalizedError)?.errorDescription ?? String(localized: "暫時抓不到對局")
       AppLog.add("error", "games: \(self.error ?? "")")
     }
@@ -137,6 +153,8 @@ final class AppModel {
   func handle(_ url: URL) {
     Telemetry.log("open_url", ["host": url.host ?? url.scheme ?? ""])
     // 小工具點進來：rookielab://practice、rookielab://latest
+    if url.scheme == "rookielab", url.host == "report" { showReport = true; tab = .games; return }
+    if url.scheme == "rookielab", url.host == "openings" { tab = .openings; return }
     if url.scheme == "rookielab", url.host == "practice" { run(.practice); return }
     if url.scheme == "rookielab", url.host == "latest" { run(.latestGame); return }
     guard url.scheme == "rookielab", url.host == "import",
@@ -169,11 +187,7 @@ final class AppModel {
     do {
       let g = try await s.fetch(user)
       importing = nil
-      if account?.username.lowercased() != user.lowercased() || account?.platform != s.platform {
-        use(Account(platform: s.platform, username: user))
-      }
-      tab = .games
-      openGame = g
+      addImported(g)
     } catch {
       importing = .failed(String(localized: "找到帳號了，但抓不到這局的棋譜，稍後再試。"))
     }
@@ -194,9 +208,16 @@ final class AppModel {
   }
 }
 
-enum AppTab: Hashable { case games, report, practice, analysis, me }
+enum AppTab: String, Hashable { case games, report, openings, practice, analysis, me }
 
 struct RootView: View {
+  private var coursePreview: OpeningCourse? {
+    #if DEBUG
+    let args = ProcessInfo.processInfo.arguments
+    if let i = args.firstIndex(of: "-course"), let id = args[safe: i + 1] { return OpeningCourse.all.first { $0.id == id } }
+    #endif
+    return nil
+  }
   private var openingPreview: Bool {
     #if DEBUG
     ProcessInfo.processInfo.arguments.contains("-openingBoard")
@@ -212,24 +233,28 @@ struct RootView: View {
     #if DEBUG
     let args = ProcessInfo.processInfo.arguments
     if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
-      app.tab = ["report": .report, "practice": .practice, "analysis": .analysis, "me": .me][args[i + 1]] ?? .games
+      app.tab = ["report": .games, "openings": .openings, "practice": .practice, "analysis": .analysis, "me": .me][args[i + 1]] ?? .games
+      app.showReport = args[i + 1] == "report"
     }
     #endif
   }
 
   var body: some View {
     ZStack {
-      if openingPreview {
+      if let coursePreview {
+        NavigationStack {
+          if ProcessInfo.processInfo.arguments.contains("-courseLesson") { OpeningCourseLessonView(course: coursePreview, stage: coursePreview.stages[0]) }
+          else { OpeningCourseView(course: coursePreview) }
+        }
+      } else if openingPreview {
         NavigationStack { OpeningAnalysisView(account: "local") }
-      } else if app.account == nil {
-        OnboardingView { app.use($0) }
       } else {
         TabView(selection: $app.tab) {
           Tab("對局", systemImage: "list.bullet.rectangle.portrait", value: .games) {
-            NavigationStack { GamesView() }
+            NavigationStack { GamesHubView() }
           }
-          Tab("報告", systemImage: "chart.xyaxis.line", value: .report) {
-            NavigationStack { ReportView() }
+          Tab("開局", systemImage: "square.grid.3x3", value: .openings) {
+            NavigationStack { OpeningCoursesView() }
           }
           Tab("練習", systemImage: "flame", value: .practice) {
             NavigationStack { PracticeView() }
@@ -256,7 +281,10 @@ struct RootView: View {
     // Siri／捷徑、小工具：冷啟動時在 task 接，App 開著時在 onChange 接
     .task { if let a = Router.shared.pending { Router.shared.pending = nil; app.run(a) } }
     .onChange(of: Router.shared.pending) { _, a in if let a { Router.shared.pending = nil; app.run(a) } }
-    .onChange(of: app.tab) { _, t in AppLog.add("tab", "\(t)") }
+    .onChange(of: app.tab) { _, t in
+      if t == .report { app.showReport = true; app.tab = .games }
+      AppLog.add("tab", "\(t)")
+    }
     .overlay(alignment: .top) {
       if case .loading = app.importing {
         Label("讀取分享的對局…", systemImage: "arrow.down.circle").font(.subheadline.weight(.medium))
@@ -282,7 +310,7 @@ struct PickSideSheet: View {
   var body: some View {
     VStack(spacing: 14) {
       Text("這局哪一方是你？").font(.title3.bold()).padding(.top, 24)
-      Text("選了之後會記住這個 \(shared.platform.name) 帳號，下次分享直接打開。").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+      Text("這次只用來決定分析哪一方，不需要加入棋站帳號。").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
       ForEach([(Side.white, shared.white), (Side.black, shared.black)], id: \.1) { side, name in
         Button { pick(name) } label: {
           HStack {
@@ -495,7 +523,7 @@ struct GamesView: View {
       }
       #endif
     }
-    .navigationTitle(app.account?.username ?? String(localized: "對局"))
+    .navigationTitle(app.usingImported ? String(localized: "匯入的對局") : app.account?.username ?? String(localized: "對局"))
     // 點標題切換帳號（iOS 原生的標題選單）
     .toolbarTitleMenu {
       ForEach(app.accounts) { a in
@@ -590,7 +618,7 @@ struct ShareGuideCard: View {
         }
         step(1, String(localized: "在 Chess.com 或 Lichess 的對局頁，點分享"))
         step(2, String(localized: "選 Rookie Lab"))
-        step(3, String(localized: "自動認出你的帳號，打開這局的復盤"))
+        step(3, String(localized: "選擇你執哪一方，打開這局的復盤"))
         Button("第一次在分享選單找不到？") { detail = true }.font(.footnote)
       }
       .padding(14)
@@ -639,7 +667,7 @@ struct GameRow: View {
 
   var body: some View {
     HStack(spacing: 12) {
-      Text(game.result == .win ? String(localized: "勝") : game.result == .loss ? String(localized: "負") : String(localized: "和"))
+      Text(game.termination == "unfinished" ? "—" : game.result == .win ? String(localized: "勝") : game.result == .loss ? String(localized: "負") : String(localized: "和"))
         .font(.subheadline.bold()).frame(width: 32, height: 32)
         .background(resultColor.opacity(0.15), in: Circle())
         .foregroundStyle(resultColor)

@@ -156,6 +156,7 @@ struct PracticeView: View {
   /// 開始今天的練習（按鈕、Siri／捷徑、小工具都走這裡）
   private func startToday() {
     guard !preparing else { return }
+    if app.account == nil && store.cards.isEmpty && openingReview.active(account: OpeningRoute.learner).isEmpty { app.tab = .openings; return }
     // 每天的 5 題免費；做完之後再練一組是 Premium
     if store.todayCount >= Self.daily, !Premium.shared.active { paywall = true; return }
     let remaining = max(1, Self.daily - store.todayCount)
