@@ -11,15 +11,24 @@ def face(want):
         except OSError: break
 TB=face(('PingFang TC','Semibold')); TR=face(('PingFang TC','Regular'))
 W,H=1320,2868; CREAM=(255,247,239); TEAL=(31,111,120); ORANGE=(232,113,31); INK=(42,37,34)
-shots=[('2-quick','停在重點，換你找找看','錯過的機會，當下就變成一堂課'),
-       ('3-wrong','走錯了也沒關係','先看對手怎麼回應，再試一次'),
-       ('4-compare','好在哪、差在哪','候選步各走兩步，一眼看懂'),
-       ('5-puzzle','每天 5 題，從你的棋來','錯過的機會自動變成練習題'),
-       ('7-report','一次看最近 10 盤','準確率、常見問題、先練什麼'),
-       ('6-endgame','殘局一步一步學','看要領、看示範，再跟引擎練')]
+# 第三個參數 en 換英文標題（1.1.0 起：單局復盤）
+LANG=sys.argv[3] if len(sys.argv)>3 else 'zh'
+shots={'zh':[('4-find','停在改變局勢的那一步','你的關鍵步，換你找找看'),
+             ('2-opening','這局下的是什麼開局','理論走到第幾手、你的戰績'),
+             ('3-stop','雙方的關鍵步都講清楚','牽制、保護、最佳步畫在棋盤上'),
+             ('5-summary','看完一局，重點一次回顧','點一下回到那一步'),
+             ('1-home','下完一盤，馬上復盤','輸入帳號或貼上棋譜就能開始')],
+       'en':[('4-find','Stops where the game turned','Find the better move yourself'),
+             ('2-opening','Know your opening','Book depth and your record'),
+             ('3-stop','Key moves for both sides','Pins, defenses and the best move'),
+             ('5-summary','All your key moments','Tap to jump back to any move'),
+             ('1-home','Your last game, explained','Enter a username or paste a PGN')]}[LANG]
+shots=[x for x in shots if os.path.exists(os.path.join(SRC, x[0]+'.png'))]
 for n,(f,title,sub) in enumerate(shots,1):
     c=Image.new('RGB',(W,H),CREAM); d=ImageDraw.Draw(c)
-    ft=ImageFont.truetype(F,104,index=TB); fs=ImageFont.truetype(F,58,index=TR)
+    size=104
+    while ImageFont.truetype(F,size,index=TB).getlength(title)>W-120: size-=4
+    ft=ImageFont.truetype(F,size,index=TB); fs=ImageFont.truetype(F,58,index=TR)
     d.text((W/2,250),title,font=ft,fill=TEAL,anchor='mm')
     d.text((W/2,390),sub,font=fs,fill=INK,anchor='mm')
     s=Image.open(os.path.join(SRC, f+'.png')).convert('RGB'); sw=1040; sh=int(s.height*sw/s.width); s=s.resize((sw,sh),Image.LANCZOS)

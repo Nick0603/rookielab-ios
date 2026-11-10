@@ -141,27 +141,8 @@ enum Notifier {
   @MainActor static func reschedule() {
     let c = UNUserNotificationCenter.current()
     c.removePendingNotificationRequests(withIdentifiers: (0..<7).map { "daily-\($0)" })
-    guard enabled else { return }
-    let store = ReviewStore.shared
-    let cal = Calendar.current
-    for k in 0..<7 {
-      guard let day = cal.date(byAdding: .day, value: k, to: Date()),
-            var at = cal.date(bySettingHour: hour, minute: 0, second: 0, of: day) else { continue }
-      if k == 0 && (store.practicedToday || at < Date()) { continue }
-      if at < Date() { at = at.addingTimeInterval(86_400) }
-      let content = UNMutableNotificationContent()
-      let streak = store.streak + (store.practicedToday ? 0 : 0)
-      let due = store.cards.filter { !$0.mastered && $0.due <= Day.number(at) }.count
-      if streak > 0 {
-        content.title = String(localized: "連續 \(streak) 天，今天也來幾題")
-      } else {
-        content.title = String(localized: "今天練幾題就好")
-      }
-      content.body = due > 0 ? String(localized: "有 \(due) 題到期，大約 \(max(1, min(due, PracticeView.daily) / 2)) 分鐘") : String(localized: "下完棋回來分析，看這局最該記住的一件事")
-      content.sound = .default
-      let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: at)
-      c.add(UNNotificationRequest(identifier: "daily-\(k)", content: content, trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
-    }
+    // The single-game release hides practice; retain preferences/data but stop its old notifications.
+
   }
 }
 

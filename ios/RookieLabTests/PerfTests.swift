@@ -3,6 +3,46 @@ import XCTest
 
 /// 速度量測（印到檔案）：抓對局、讀存檔、報告規則分析、引擎每個局面的時間（不同設定）
 final class PerfTests: XCTestCase {
+  @MainActor func testQuickReviewFixedGames() async throws {
+    let fixtures = [
+      "1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7#",
+      "1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7 8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7 14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8#"
+    ]
+    try await StockfishService.shared.start()
+    var timings: [String] = []
+    for pgn in fixtures {
+      let line = try XCTUnwrap(ChessLine(pgn: pgn))
+      func game() -> GameSummary {
+        GameSummary(id: UUID().uuidString, platform: .chesscom, endedAt: Date(), color: .white,
+                    opponent: "Fixture", myRating: nil, opponentRating: nil, result: .win,
+                    timeClass: "rapid", timeControl: "600", pgn: pgn, url: nil)
+      }
+      let fastGame = game()
+      let referenceGame = game()
+      defer { AnalysisStore.forget(fastGame.id); AnalysisStore.forget(referenceGame.id) }
+      let start = ProcessInfo.processInfo.systemUptime
+      let fastResult = await AnalysisStore.quickReview(fastGame, line: line, side: .white, startedAt: start) { _, _, _ in }
+      let fastSeconds = ProcessInfo.processInfo.systemUptime - start
+      let fast = try XCTUnwrap(fastResult)
+      XCTAssertTrue(fast.complete)
+      XCTAssertEqual((fast.records.last ?? nil)?.cls, .best)
+      let referenceStart = ProcessInfo.processInfo.systemUptime
+      let referenceResult = await AnalysisStore.analyze(referenceGame, line: line, priority: .interactive)
+      let referenceSeconds = ProcessInfo.processInfo.systemUptime - referenceStart
+      let reference = try XCTUnwrap(referenceResult)
+      func mistakes(_ result: AnalyzedGame) -> [Int] {
+        result.records.compactMap { $0 }.filter { $0.mover == .white && $0.cls.isBad }.map(\.ply)
+      }
+      timings.append("REVIEW_BENCH plies=\(line.plies.count) fast=\(fastSeconds) reference=\(referenceSeconds) fastMistakes=\(mistakes(fast)) referenceMistakes=\(mistakes(reference))")
+      let expired = await AnalysisStore.quickReview(game(), line: line, side: .white, startedAt: start - 20) { _, _, _ in }
+      XCTAssertFalse(try XCTUnwrap(expired).complete)
+    }
+    let report = XCTAttachment(string: timings.joined(separator: "\n"))
+    report.name = "Review engine timings"
+    report.lifetime = .keepAlways
+    add(report)
+  }
+
   @MainActor func testMeasure() async throws {
     var out = ""
     func t<T>(_ name: String, _ f: () async throws -> T) async rethrows -> T {

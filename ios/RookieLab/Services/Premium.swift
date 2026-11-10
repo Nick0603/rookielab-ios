@@ -11,6 +11,10 @@ final class Premium {
   /// 有訂閱（含免費試用中）；離線時沿用上次確認的結果
   private(set) var active = UserDefaults.standard.bool(forKey: "premiumActive")
   private var updates: Task<Void, Never>?
+  private(set) var entitlementReady = false
+  private(set) var error: String?
+  private var refreshGeneration = 0
+  private let expiryKey = "premiumVerifiedUntil"
 
   func start() {
     guard updates == nil else { return }
@@ -25,33 +29,73 @@ final class Premium {
   }
 
   func load() async {
-    products = ((try? await Product.products(for: Self.ids)) ?? []).sorted { $0.price > $1.price }
+    error = nil
+    do {
+      products = try await Product.products(for: Self.ids).sorted { $0.price > $1.price }
+      if products.isEmpty { error = String(localized: "暫時無法取得訂閱方案，請稍後重試。") }
+    } catch { self.error = String(localized: "訂閱方案載入失敗，請檢查連線後重試。") }
   }
 
   func refresh() async {
-    var on = false
-    for await r in Transaction.currentEntitlements {
-      if case let .verified(t) = r, Self.ids.contains(t.productID), t.revocationDate == nil { on = true }
+    refreshGeneration += 1
+    let generation = refreshGeneration
+    entitlementReady = false
+    SingleGameAdvertising.shared.update(adFree: active, entitlementReady: false)
+    var records: [SubscriptionAccessRecord] = []
+    var uncertain = false
+    var currentIDs = Set<String>()
+    for await result in Transaction.currentEntitlements {
+      switch result {
+      case .verified(let t) where Self.ids.contains(t.productID):
+        currentIDs.insert(t.productID)
+        records.append(.init(expiration: t.expirationDate, revoked: t.revocationDate != nil || t.isUpgraded, current: true))
+      case .unverified(let t, _) where Self.ids.contains(t.productID): uncertain = true
+      default: break
+      }
     }
-    active = on
-    UserDefaults.standard.set(on, forKey: "premiumActive")
+    for id in Self.ids where !currentIDs.contains(id) {
+      if let result = await Transaction.latest(for: id) {
+        switch result {
+        case .verified(let t): records.append(.init(expiration: t.expirationDate, revoked: t.revocationDate != nil || t.isUpgraded, current: false))
+        case .unverified: uncertain = true
+        }
+      }
+    }
+    guard generation == refreshGeneration else { return }
+    let cached = UserDefaults.standard.object(forKey: expiryKey) as? Date
+    let access = SubscriptionAccess.resolve(records: records, cachedUntil: cached, uncertain: uncertain, previousActive: active)
+    active = access.active; entitlementReady = access.ready
+    UserDefaults.standard.set(active, forKey: "premiumActive")
+    if let until = access.validUntil { UserDefaults.standard.set(until, forKey: expiryKey) }
+    else if access.ready { UserDefaults.standard.removeObject(forKey: expiryKey) }
+    SingleGameAdvertising.shared.update(adFree: active, entitlementReady: entitlementReady)
   }
 
   /// 買：成功回 true
   func buy(_ p: Product) async -> Bool {
-    guard let r = try? await p.purchase() else { return false }
-    if case let .success(v) = r, case let .verified(t) = v {
+    error = nil
+    let r: Product.PurchaseResult
+    do { r = try await p.purchase() }
+    catch { self.error = String(localized: "購買未完成，請稍後重試。"); return false }
+    if case .pending = r { error = String(localized: "購買等待核准，完成後權益會自動更新。") }
+    if case .success(.unverified) = r { error = String(localized: "暫時無法驗證購買，請稍後恢復購買。"); return false }
+    if case let .success(v) = r, case let .verified(t) = v, Self.ids.contains(t.productID) {
       await t.finish()
       await refresh()
       Telemetry.log("premium_buy", ["product": p.id])
-      return true
+      if !active { error = String(localized: "購買已完成，權益確認中。請稍後恢復購買。") }
+      return active
     }
     return false
   }
 
   func restore() async {
-    try? await AppStore.sync()
-    await refresh()
+    error = nil
+    do {
+      try await AppStore.sync(); await refresh()
+      if !entitlementReady { error = String(localized: "暫時無法驗證購買，請稍後恢復購買。") }
+      else if !active { error = String(localized: "目前沒有可恢復的有效訂閱。請確認使用原購買帳號。") }
+    } catch { self.error = String(localized: "恢復購買失敗，請稍後重試。") }
   }
 }
 
@@ -62,30 +106,41 @@ struct PaywallView: View {
   @Environment(\.dismiss) private var dismiss
   @State private var premium = Premium.shared
   @State private var buying: String?
+  @State private var restoring = false
   @State private var trial: [String: Bool] = [:]
+  private var removal: Bool { from == "ads" }
+  private var available: Bool { !removal || SingleGameAdvertising.shared.configured }
 
   var body: some View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 18) {
           HStack(spacing: 12) {
-            Image("coach-cheer").resizable().scaledToFit().frame(width: 64, height: 64)
+            Image("accent-rook").resizable().scaledToFit().accessibilityHidden(true).frame(width: 64, height: 64)
             VStack(alignment: .leading, spacing: 4) {
-              Text("Rookie Lab Premium").font(.title2.bold()).foregroundStyle(Brand.ink)
+              Text(removal ? String(localized: "移除廣告") : "Rookie Lab Premium").font(.title2.bold()).foregroundStyle(Brand.ink)
               Text("陪你把每一盤棋看得更懂").font(.subheadline).foregroundStyle(.secondary)
             }
           }
+          if removal {
+            Text(available ? String(localized: "保留完整單局分析，訂閱期間享受無廣告復盤。") : String(localized: "目前尚未啟用 App 廣告，暫不提供去廣告購買。已有訂閱仍可恢復原有權益。"))
+              .foregroundStyle(.secondary)
+          } else {
           VStack(alignment: .leading, spacing: 12) {
+            if SingleGameAdvertising.shared.configured { benefit("rectangle.badge.checkmark", String(localized: "移除廣告"), String(localized: "訂閱有效期間不顯示 App 廣告")) }
             benefit("sparkles", String(localized: "問教練"), String(localized: "對任何一步提問，教練根據引擎分析回答"))
             benefit("flame.fill", String(localized: "不限組數的練習"), String(localized: "每天的 5 題做完，想練多少組都可以"))
             benefit("chart.xyaxis.line", String(localized: "20 局跨局報告"), String(localized: "看更長期的習慣與進步"))
           }
           .padding(14).background(Brand.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-          Text("復盤、快速復盤、每天 5 題、最近 10 局的報告都維持免費。").font(.footnote).foregroundStyle(.secondary)
-          if premium.products.isEmpty {
-            ProgressView().frame(maxWidth: .infinity)
+          Text("訂閱只移除廣告，單局分析與快速復盤的內容都一樣。").font(.footnote).foregroundStyle(.secondary)
           }
-          ForEach(premium.products, id: \.id) { p in
+          if let error = premium.error {
+            Text(error).font(.subheadline).foregroundStyle(.secondary).accessibilityIdentifier("subscription-error")
+            if available && premium.products.isEmpty { Button("重新載入方案") { Task { await premium.load() } } }
+          }
+          if available && premium.products.isEmpty && premium.error == nil { ProgressView().frame(maxWidth: .infinity) }
+          ForEach(available ? premium.products : [], id: \.id) { p in
             Button {
               buying = p.id
               Task { let ok = await premium.buy(p); buying = nil; if ok { dismiss() } }
@@ -93,7 +148,10 @@ struct PaywallView: View {
               HStack {
                 VStack(alignment: .leading, spacing: 2) {
                   Text(p.displayName).font(.headline)
-                  if trial[p.id] == true { Text("先免費試用 1 週").font(.caption) }
+                  if trial[p.id] == true, let offer = p.subscription?.introductoryOffer {
+                    Text("先試用 \(period(offer.period))，之後 \(p.displayPrice)／\(period(p.subscription!.subscriptionPeriod))，自動續訂。")
+                      .font(.caption)
+                  }
                 }
                 Spacer()
                 if buying == p.id { ProgressView().tint(.white) } else {
@@ -103,10 +161,13 @@ struct PaywallView: View {
               .padding(16).foregroundStyle(.white)
               .background(p.subscription?.subscriptionPeriod.unit == .year ? Brand.orange : Brand.ink, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .disabled(buying != nil)
-            .task { trial[p.id] = await p.subscription?.isEligibleForIntroOffer == true && p.subscription?.introductoryOffer != nil }
+            .disabled(buying != nil || restoring || !premium.entitlementReady)
+            .task { trial[p.id] = await p.subscription?.isEligibleForIntroOffer == true && p.subscription?.introductoryOffer?.paymentMode == .freeTrial }
           }
-          Button("恢復購買") { Task { await premium.restore(); if premium.active { dismiss() } } }.frame(maxWidth: .infinity)
+          Button(restoring ? String(localized: "恢復中…") : String(localized: "恢復購買")) {
+            restoring = true
+            Task { await premium.restore(); restoring = false; if premium.active { dismiss() } }
+          }.disabled(restoring || buying != nil).frame(maxWidth: .infinity)
           Text("訂閱會自動續訂，可以隨時在「設定 → Apple 帳號 → 訂閱」取消；取消後用到這期結束。").font(.caption2).foregroundStyle(.secondary)
           HStack(spacing: 16) {
             Link("使用條款", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
@@ -118,8 +179,18 @@ struct PaywallView: View {
       }
       .background(Brand.paper)
       .toolbar { ToolbarItem(placement: .cancellationAction) { Button("之後再說") { dismiss() } } }
-      .task { if premium.products.isEmpty { await premium.load() } }
+      .task { if available && premium.products.isEmpty { await premium.load() } }
       .onAppear { Telemetry.log("paywall_open", ["from": from]) }
+    }
+  }
+
+  private func period(_ p: Product.SubscriptionPeriod) -> String {
+    switch p.unit {
+    case .day: return String(localized: "\(p.value) 天")
+    case .week: return String(localized: "\(p.value) 週")
+    case .month: return String(localized: "\(p.value) 個月")
+    case .year: return String(localized: "\(p.value) 年")
+    @unknown default: return String(localized: "訂閱週期")
     }
   }
 

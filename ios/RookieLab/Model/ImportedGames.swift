@@ -21,6 +21,7 @@ enum ImportedGames {
     return GameSummary(id: "pgn-" + String(hash, radix: 36), platform: .chesscom, endedAt: Date(), color: side,
       opponent: tag(side == .white ? "Black" : "White") ?? String(localized: "匯入對局"), myRating: nil, opponentRating: nil,
       result: won ? .win : lost ? .loss : .draw, timeClass: "imported", timeControl: tag("TimeControl") ?? "?", pgn: text, url: nil,
-      termination: ["1-0", "0-1", "1/2-1/2"].contains(result) ? nil : "unfinished")
+      // 貼上的棋譜常沒寫勝負：結果未知，但仍是要復盤的對局（不同於棋站上進行中的 unfinished）
+      termination: ["1-0", "0-1", "1/2-1/2"].contains(result) ? nil : "unknown")
   }
 }

@@ -1,0 +1,16 @@
+# Local Firebase Analytics experiment only; do not distribute with bundled GPL Stockfish.
+include: [project.admob-pilot.yml]
+targets:
+  RookieLab:
+    dependencies:
+      - package: Firebase
+        product: FirebaseAnalyticsCore
+schemes:
+  RookieLab:
+    test:
+      environmentVariables:
+        ROOKIELAB_FIREBASE_PILOT: "1"
+    run:
+      commandLineArguments:
+        -FIRAnalyticsDebugEnabled: true
+        "-telemetryInSimulator YES": true

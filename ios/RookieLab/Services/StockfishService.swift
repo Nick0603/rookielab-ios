@@ -167,7 +167,7 @@ actor StockfishService {
 
   /// 這個局面的前兩名（走棋方視角）。
   /// 用「節點數」限制，不用深度（跟 Lichess 伺服器分析同一種做法）：每個局面花的時間穩定。
-  func analyse(fen: String, nodes: Int = AnalysisStore.nodes, depth: Int? = nil, multipv want: Int = 2, priority: Priority = .background, onUpdate: Update? = nil) async -> [EngineLine] {
+  func analyse(fen: String, nodes: Int = AnalysisStore.nodes, depth: Int? = nil, multipv want: Int = 2, priority: Priority = .background, deadline: TimeInterval? = nil, onUpdate: Update? = nil) async -> [EngineLine] {
     let key = "\(fen)|\(depth.map { "d\($0)" } ?? "\(nodes)")|\(want)"
     if let hit = cache[key] { return hit }
     if state != .ready { try? await start() }
@@ -175,6 +175,7 @@ actor StockfishService {
     await acquire(priority)
     defer { release() }
     if let hit = cache[key] { return hit }
+    if let deadline, ProcessInfo.processInfo.systemUptime >= deadline { return [] }
     // 已經將死或逼和：沒有步可以算（引擎會回 bestmove (none)）
     guard FEN.hasMoves(fen) else { return [] }
     lines = [:]
@@ -193,7 +194,9 @@ actor StockfishService {
         if let depth { await e.send(command: .go(depth: depth)) } else { await e.send(command: .go(nodes: nodes)) }
       }
       // 保險：時間到了還沒收到 bestmove 就叫它停、自己收尾，絕不卡住整個排隊
-      let limit = UInt64(2 + nodes / 100_000) * 1_000_000_000
+      let defaultLimit = Double(2 + nodes / 100_000)
+      let remaining = deadline.map { max(0, $0 - ProcessInfo.processInfo.systemUptime) } ?? defaultLimit
+      let limit = UInt64(min(defaultLimit, remaining) * 1_000_000_000)
       Task { [weak self] in
         try? await Task.sleep(nanoseconds: limit)
         await self?.timeout(token)
@@ -201,6 +204,6 @@ actor StockfishService {
     }
     self.onUpdate = nil
     if !out.isEmpty, !stopped { cache[key] = out }
-    return out
+    return stopped && deadline != nil ? [] : out
   }
 }

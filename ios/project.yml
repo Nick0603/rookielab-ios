@@ -30,6 +30,13 @@ packages:
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk
     from: 13.0.0
+  # 首頁 Banner 廣告（AdMob，閉源）。2026-11-10 使用者知情決定：接受與內建 GPL Stockfish 一起發布的授權風險（D-77）
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    exactVersion: 12.14.0
+  UserMessagingPlatform:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git
+    exactVersion: 3.1.0
 targets:
   RookieLab:
     type: application
@@ -43,11 +50,16 @@ targets:
         com.apple.security.application-groups: [group.io.rookielab.app]
         # iCloud 鍵值同步（複習卡、練習紀錄）
         com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
+        # 新棋局推播（APNs）；匯出 App Store 版時依描述檔改為 production
+        aps-environment: development
     dependencies:
       - package: ChessKit
       - package: ChessKitEngine
       - package: Firebase
         product: FirebaseCrashlytics
+      - package: GoogleMobileAds
+      - package: UserMessagingPlatform
+        product: GoogleUserMessagingPlatform
       - target: RookieLabShare
       - target: RookieLabWidget
     # Stockfish 評估檔打包進 App（約 78MB），第一次打開不用再下載
@@ -76,12 +88,19 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: Rookie Lab
+        # AdMob 正式 App ID（版位 ID 在 AdMobPilot.swift；Debug／自己裝的版本用 Google 測試版位）
+        GADApplicationIdentifier: ca-app-pub-5287756452662687~1030829762
+        SKAdNetworkItems:
+          - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
         CFBundleDevelopmentRegion: zh-Hant
         UILaunchScreen:
           UIColorName: LaunchBackground
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight, UIInterfaceOrientationPortraitUpsideDown]
         ITSAppUsesNonExemptEncryption: false
+        FirebaseAutomaticScreenReportingEnabled: false
+        FIREBASE_ANALYTICS_COLLECTION_ENABLED: false
+        FirebaseCrashlyticsCollectionEnabled: false
         UIBackgroundModes: [fetch]
         BGTaskSchedulerPermittedIdentifiers: [io.rookielab.refresh]
         CFBundleURLTypes:
@@ -164,13 +183,28 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: io.rookielab.app.tests
+  RookieLabUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [RookieLabUITests]
+    dependencies:
+      - target: RookieLab
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: io.rookielab.app.uitests
 schemes:
   RookieLab:
     build:
       targets:
         RookieLab: all
         RookieLabTests: [test]
+        RookieLabUITests: [test]
+    # 模擬器與測試用的本機訂閱商品（跟 App Store Connect 同 ID／價格），不會跟正式版發布
+    run:
+      storeKitConfiguration: StoreKit/RookieLab.storekit
     test:
-      targets: [RookieLabTests]
+      storeKitConfiguration: StoreKit/RookieLab.storekit
+      targets: [RookieLabTests, RookieLabUITests]
       environmentVariables:
         TEST_ACCOUNT: chesscom:rookielab-io

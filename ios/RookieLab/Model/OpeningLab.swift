@@ -222,14 +222,22 @@ final class OpeningExercise {
   private(set) var route: OpeningRoute
   private(set) var plies: [Ply]
   private let alternatives: [OpeningRoute]
+  private let automaticOpponent: Bool
   private(set) var cursor = 0
   private(set) var clean = true
   private(set) var finished = false
   var feedback: String?
   var hint = false
-  init(route: OpeningRoute, alternatives: [OpeningRoute] = [], at: Int = 0, clean: Bool = true) {
-    self.route = route; plies = route.plies; self.alternatives = alternatives; self.clean = clean
-    cursor = min(max(0, at), plies.count); advanceOpponent()
+  init(route: OpeningRoute, alternatives: [OpeningRoute] = [], at: Int = 0, clean: Bool = true, automaticOpponent: Bool = true) {
+    self.route = route; plies = route.plies; self.alternatives = alternatives; self.clean = clean; self.automaticOpponent = automaticOpponent
+    cursor = min(max(0, at), plies.count)
+    finished = cursor == plies.count && !plies.isEmpty
+    if automaticOpponent { advanceOpponent() }
+  }
+  func reply() {
+    guard !finished, let expected, expected.mover != route.side else { return }
+    Sounds.play(for: expected); cursor += 1
+    finished = cursor == plies.count
   }
   var fen: String { cursor == 0 ? AnalysisModel.standard : plies[cursor - 1].fenAfter }
   var expected: Ply? { plies[safe: cursor] }
@@ -240,7 +248,7 @@ final class OpeningExercise {
     finished = cursor == plies.count && !plies.isEmpty
   }
   func move(_ uci: String) {
-    guard !finished, let expected, ChessLine.ply(fen: fen, uci: uci, index: cursor) != nil else { return }
+    guard !finished, let expected, expected.mover == route.side, ChessLine.ply(fen: fen, uci: uci, index: cursor) != nil else { return }
     if uci != expected.uci, let other = alternatives.first(where: { candidate in
       candidate.side == route.side && candidate.moves.count > cursor && Array(candidate.moves.prefix(cursor)) == Array(route.moves.prefix(cursor)) && candidate.moves[cursor] == uci
     }) {
@@ -253,7 +261,8 @@ final class OpeningExercise {
       feedback = inBook ? String(localized: "這也是理論走法；這次先練選定的路線，也可以到分析板比較。") : String(localized: "這步不在目前收錄的理論裡，不代表是壞棋。可以再試一次，或到分析板看看。")
       return
     }
-    Sounds.play(for: expected); cursor += 1; hint = false; feedback = nil; advanceOpponent()
+    Sounds.play(for: expected); cursor += 1; hint = false; feedback = nil
+    if automaticOpponent { advanceOpponent() } else { finished = cursor == plies.count }
   }
   func showHint() { clean = false; hint = true }
   func explored() { clean = false }

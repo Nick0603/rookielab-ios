@@ -4,12 +4,16 @@ import UIKit
 import FirebaseCore
 import FirebaseCrashlytics
 #endif
+#if canImport(FirebaseAnalytics)
+import FirebaseAnalytics
+#endif
 
 /// 使用統計送到自己的伺服器（rookielab.io/api/events → Cloudflare D1），當機紀錄用 Firebase Crashlytics。
 /// 不用 Firebase Analytics：它是閉源套件，App 內建 GPL 的 Stockfish，不能一起發布。
 /// Crashlytics 設定檔放 RookieLab/Firebase/：上架版 GoogleService-Info.plist（io.rookielab.app）、測試機 GoogleService-Info-Dev.plist（io.rookielab.app.dev）；沒有就不啟動
 enum Telemetry {
   private(set) static var on = false
+  private static var started = false
 
   static func start() {
     // 模擬器、跑測試時不送（不要把開發中的操作算進真實的使用數據）
@@ -18,20 +22,53 @@ enum Telemetry {
     guard UserDefaults.standard.bool(forKey: "telemetryInSimulator") else { return }
     #endif
     if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
-    Events.shared.enable()
-    log("app_open")
+    started = true
+    if UsagePrivacy.enabled { Events.shared.enable() }
     #if canImport(FirebaseCore)
     let dev = Bundle.main.bundleIdentifier?.hasSuffix(".dev") ?? false
-    guard let path = Bundle.main.path(forResource: dev ? "GoogleService-Info-Dev" : "GoogleService-Info", ofType: "plist"),
-          let options = FirebaseOptions(contentsOfFile: path) else { return }
-    FirebaseApp.configure(options: options)
-    on = true
+    if let path = Bundle.main.path(forResource: dev ? "GoogleService-Info-Dev" : "GoogleService-Info", ofType: "plist"),
+       let options = FirebaseOptions(contentsOfFile: path) {
+      if FirebaseApp.app() == nil { FirebaseApp.configure(options: options) }
+      on = true
+    }
     #endif
+    updateCollection()
+    log("app_open")
   }
 
   /// 記一個事件（名稱用英文小寫加底線，參數值只放數字或短字串，不放帳號名稱、棋譜）
   static func log(_ name: String, _ params: [String: Any] = [:]) {
-    Events.shared.add(name, params)
+    guard UsagePrivacy.enabled, name.range(of: "^[a-z][a-z0-9_]{0,39}$", options: .regularExpression) != nil else { return }
+    let clean = UsageEventPolicy.parameters(params)
+    Events.shared.add(name, clean)
+    #if canImport(FirebaseAnalytics)
+    guard on else { return }
+    Analytics.logEvent(UsageEventPolicy.firebaseName(name), parameters: clean)
+    #endif
+  }
+
+  static func updateCollection() {
+    guard started else { return }
+    Events.shared.setCollection(UsagePrivacy.enabled)
+    #if canImport(FirebaseCore)
+    if on {
+      Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(UsagePrivacy.enabled)
+      Crashlytics.crashlytics().setUserID(UsagePrivacy.enabled ? UsagePrivacy.installID : "")
+    }
+    #endif
+    #if canImport(FirebaseAnalytics)
+    if on {
+      Analytics.setConsent([.analyticsStorage: UsagePrivacy.enabled ? .granted : .denied,
+                            .adStorage: .denied, .adUserData: .denied, .adPersonalization: .denied])
+      Analytics.setUserID(UsagePrivacy.enabled ? UsagePrivacy.installID : nil)
+      #if DEBUG || DEVINSTALL
+      Analytics.setUserProperty("debug", forName: "build_channel")
+      #else
+      Analytics.setUserProperty("release", forName: "build_channel")
+      #endif
+      Analytics.setAnalyticsCollectionEnabled(UsagePrivacy.enabled)
+    }
+    #endif
   }
 
   /// 送出還沒送的事件（App 進背景時呼叫）
@@ -40,7 +77,7 @@ enum Telemetry {
   /// 當機前的足跡（換頁、打開哪個畫面）：跟回饋的診斷紀錄同一份
   static func breadcrumb(_ text: String) {
     #if canImport(FirebaseCore)
-    guard on else { return }
+    guard on, UsagePrivacy.enabled else { return }
     Crashlytics.crashlytics().log(text)
     #endif
   }
@@ -48,8 +85,9 @@ enum Telemetry {
   /// 沒有當機但值得知道的錯誤（例如抓對局失敗）
   static func record(_ error: Error, _ context: String) {
     #if canImport(FirebaseCore)
-    guard on else { return }
-    Crashlytics.crashlytics().record(error: error, userInfo: ["context": context])
+    guard on, UsagePrivacy.enabled else { return }
+    let e = error as NSError
+    Crashlytics.crashlytics().record(error: NSError(domain: e.domain, code: e.code), userInfo: ["context": String(context.prefix(64))])
     #endif
   }
 }
@@ -60,7 +98,7 @@ final class Events: @unchecked Sendable {
   private static let endpoint = URL(string: "https://rookielab.io/api/events")!
   private static let batch = 50, keep = 500
 
-  struct Event: Codable { let n: String; let p: [String: Value]?; let t: Int64 }
+  struct Event: Codable { let n: String; let p: [String: Value]?; let t: Int64; let id: String? }
   enum Value: Codable {
     case s(String), n(Double), b(Bool)
     func encode(to e: Encoder) throws {
@@ -75,23 +113,26 @@ final class Events: @unchecked Sendable {
 
   private let q = DispatchQueue(label: "io.rookielab.events")
   private var on = false, sending = false, timer = false
+  private var generation = 0
   private var pending: [Event] = []
   private let file = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("events.json")
 
   /// App 第一次打開時隨機產生，只用來把同一支手機的事件串起來（不是裝置識別碼，刪掉 App 就換新的）
-  private lazy var install: String = {
-    let d = UserDefaults.standard
-    if let id = d.string(forKey: "telemetryInstall") { return id }
-    let id = UUID().uuidString
-    d.set(id, forKey: "telemetryInstall")
-    return id
-  }()
+  private var install: String { UsagePrivacy.installID }
 
   func enable() {
     q.async {
       self.on = true
       if let d = try? Data(contentsOf: self.file), let saved = try? JSONDecoder().decode([Event].self, from: d) { self.pending = saved }
       if !self.pending.isEmpty { self.send() }
+    }
+  }
+
+  func setCollection(_ allowed: Bool) {
+    q.async {
+      if self.on != allowed { self.generation += 1 }
+      self.on = allowed
+      if !allowed { self.pending.removeAll(); self.save() }
     }
   }
 
@@ -105,7 +146,7 @@ final class Events: @unchecked Sendable {
       default: return .s(String(String(describing: v).prefix(64)))
       }
     }
-    let e = Event(n: name, p: p.isEmpty ? nil : p, t: Int64(Date().timeIntervalSince1970 * 1000))
+    let e = Event(n: name, p: p.isEmpty ? nil : p, t: Int64(Date().timeIntervalSince1970 * 1000), id: UUID().uuidString)
     q.async {
       guard self.on else { return }
       self.pending.append(e)
@@ -124,6 +165,7 @@ final class Events: @unchecked Sendable {
   private func send() {
     guard on, !sending, !pending.isEmpty else { return }
     sending = true
+    let token = generation
     let chunk = Array(pending.prefix(Self.batch))
     // Debug 版、模擬器、ios/device.sh 裝到自己手機的版本（DEVINSTALL）都標 dev，查數據時排除
     #if DEBUG || DEVINSTALL
@@ -148,6 +190,7 @@ final class Events: @unchecked Sendable {
       let code = (r as? HTTPURLResponse)?.statusCode ?? 0
       self.q.async {
         self.sending = false
+        guard token == self.generation else { self.send(); return }
         // 成功、或資料本身有問題（400/413，重送也一樣）就移掉；網路失敗、429、5xx 留著下次送
         if code == 200 || code == 400 || code == 413 {
           self.pending.removeFirst(min(chunk.count, self.pending.count))

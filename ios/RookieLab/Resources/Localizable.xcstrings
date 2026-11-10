@@ -19449,6 +19449,6273 @@
           }
         }
       }
+    },
+    "保留完整單局分析，訂閱期間享受無廣告復盤。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep full game analysis and review without ads during your subscription."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conserva el análisis completo y repasa sin anuncios durante tu suscripción."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tenha a análise completa e revise sem anúncios durante sua assinatura."
+          }
+        }
+      }
+    },
+    "先前版本功能": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earlier features"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funciones anteriores"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recursos anteriores"
+          }
+        }
+      }
+    },
+    "先前版本的複習設定": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earlier review settings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes de repaso anteriores"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurações anteriores de revisão"
+          }
+        }
+      }
+    },
+    "先試用 %@，之後 %@／%@，自動續訂。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try for %@, then %@ per %@. Renews automatically."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba durante %@, luego %@ por %@. Renovación automática."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimente por %@, depois %@ por %@. Renovação automática."
+          }
+        }
+      }
+    },
+    "分享對局說明": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to share a game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cómo compartir una partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como compartilhar uma partida"
+          }
+        }
+      }
+    },
+    "分享連結": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share a link"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir un enlace"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartilhar um link"
+          }
+        }
+      }
+    },
+    "分析一局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze a game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizar una partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analisar uma partida"
+          }
+        }
+      }
+    },
+    "分析會以選定的一方呈現。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis is shown from the selected side."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El análisis se muestra desde el lado elegido."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A análise é exibida do ponto de vista do lado escolhido."
+          }
+        }
+      }
+    },
+    "加入棋站來源": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a chess account"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir una cuenta de ajedrez"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar uma conta de xadrez"
+          }
+        }
+      }
+    },
+    "匯入一局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import a game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar una partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar uma partida"
+          }
+        }
+      }
+    },
+    "原有課程、練習進度與複習排程保留在這裡。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your courses, practice progress and review schedule are preserved here."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aquí se conservan tus cursos, progreso y calendario de repaso."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seus cursos, progresso e cronograma de revisão estão preservados aqui."
+          }
+        }
+      }
+    },
+    "在 Chess.com 或 Lichess 打開一局，點分享，選 Rookie Lab。請分享對局連結，不是圖片或 GIF。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open a game on Chess.com or Lichess, tap Share, then choose Rookie Lab. Share the game link rather than an image or GIF."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre una partida en Chess.com o Lichess, toca Compartir y elige Rookie Lab. Comparte el enlace de la partida, no una imagen o GIF."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra uma partida no Chess.com ou Lichess, toque em Compartilhar e escolha Rookie Lab. Compartilhe o link da partida, não uma imagem ou GIF."
+          }
+        }
+      }
+    },
+    "在「分析一局」點「匯入一局」，貼上完整 PGN，選擇你執白或執黑。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Analyze a game, tap Import a game, paste the full PGN and choose your side."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Analizar una partida, toca Importar una partida, pega el PGN completo y elige tu lado."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Em Analisar uma partida, toque em Importar uma partida, cole o PGN completo e escolha seu lado."
+          }
+        }
+      }
+    },
+    "對局來源": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Game source"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origen de partidas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Origem das partidas"
+          }
+        }
+      }
+    },
+    "帶入棋譜，看看關鍵局面與當時可以走的選擇。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import a game to explore key positions and the moves you could have played."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa una partida para ver posiciones clave y las jugadas que podías hacer."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importe uma partida para explorar posições importantes e as jogadas que poderia ter feito."
+          }
+        }
+      }
+    },
+    "廣告": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuncio"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anúncio"
+          }
+        }
+      }
+    },
+    "恢復中…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restoring…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurando…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurando…"
+          }
+        }
+      }
+    },
+    "恢復購買失敗，請稍後重試。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases could not be restored. Please try again later."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron restaurar las compras. Inténtalo más tarde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível restaurar as compras. Tente novamente mais tarde."
+          }
+        }
+      }
+    },
+    "暫時無法取得訂閱方案，請稍後重試。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription plans are unavailable. Please try again later."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los planes no están disponibles. Inténtalo más tarde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os planos estão indisponíveis. Tente novamente mais tarde."
+          }
+        }
+      }
+    },
+    "暫時無法驗證購買，請稍後恢復購買。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your purchase could not be verified. Try restoring purchases later."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo verificar la compra. Intenta restaurarla más tarde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível verificar a compra. Tente restaurá-la mais tarde."
+          }
+        }
+      }
+    },
+    "最近對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partidas recientes"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partidas recentes"
+          }
+        }
+      }
+    },
+    "目前尚未啟用 App 廣告，暫不提供去廣告購買。已有訂閱仍可恢復原有權益。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App ads are not enabled yet, so ad removal is not currently for sale. Existing subscribers can restore their benefits."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los anuncios de la app aún no están activados, por lo que no se vende su eliminación. Los suscriptores actuales pueden restaurar sus beneficios."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os anúncios do app ainda não estão ativados, por isso a remoção não está à venda. Assinantes existentes podem restaurar seus benefícios."
+          }
+        }
+      }
+    },
+    "目前沒有可恢復的有效訂閱。請確認使用原購買帳號。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active subscription was found. Check that you are using the account that made the purchase."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontró una suscripción activa. Usa la cuenta con la que compraste."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma assinatura ativa foi encontrada. Use a conta com a qual fez a compra."
+          }
+        }
+      }
+    },
+    "看懂剛下完的一局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understand your latest game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entiende tu última partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entenda sua última partida"
+          }
+        }
+      }
+    },
+    "移除廣告": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove ads"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar anuncios"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remover anúncios"
+          }
+        }
+      }
+    },
+    "練習與複習": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practice and review"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Práctica y repaso"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prática e revisão"
+          }
+        }
+      }
+    },
+    "訂閱方案載入失敗，請檢查連線後重試。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plans could not load. Check your connection and try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron cargar los planes. Revisa tu conexión e inténtalo de nuevo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível carregar os planos. Verifique sua conexão e tente novamente."
+          }
+        }
+      }
+    },
+    "訂閱有效期間不顯示 App 廣告": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No app ads while your subscription is active"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin anuncios en la app mientras la suscripción esté activa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sem anúncios no app enquanto a assinatura estiver ativa"
+          }
+        }
+      }
+    },
+    "訂閱與移除廣告": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription and ad removal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suscripción y eliminación de anuncios"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinatura e remoção de anúncios"
+          }
+        }
+      }
+    },
+    "訂閱週期": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "billing period"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "período de facturación"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "período de cobrança"
+          }
+        }
+      }
+    },
+    "貼上 PGN，或從 Chess.com、Lichess 分享對局連結進來，就能開始分析。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste a PGN or share a game link from Chess.com or Lichess to start analyzing."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega un PGN o comparte un enlace de Chess.com o Lichess para empezar a analizar."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cole um PGN ou compartilhe um link do Chess.com ou Lichess para começar a análise."
+          }
+        }
+      }
+    },
+    "貼上棋譜": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste a game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar una partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colar uma partida"
+          }
+        }
+      }
+    },
+    "購買已完成，權益確認中。請稍後恢復購買。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase completed; benefits are being verified. Try restoring purchases shortly."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra completada; se están verificando los beneficios. Intenta restaurar la compra en unos momentos."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra concluída; os benefícios estão sendo verificados. Tente restaurar a compra em instantes."
+          }
+        }
+      }
+    },
+    "購買未完成，請稍後重試。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase did not complete. Please try again later."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra no se completó. Inténtalo más tarde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A compra não foi concluída. Tente novamente mais tarde."
+          }
+        }
+      }
+    },
+    "購買等待核准，完成後權益會自動更新。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your purchase is awaiting approval. Benefits will update automatically."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra está pendiente de aprobación. Los beneficios se actualizarán automáticamente."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A compra está aguardando aprovação. Os benefícios serão atualizados automaticamente."
+          }
+        }
+      }
+    },
+    "重新載入方案": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload plans"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recargar planes"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recarregar planos"
+          }
+        }
+      }
+    },
+    "匯入的對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partidas importadas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partidas importadas"
+          }
+        }
+      }
+    },
+    "走子聲音選了會先播一次給你聽。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview a move sound when you select it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escucha el sonido de una jugada al seleccionarlo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouça uma prévia do som ao selecioná-lo."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "走子聲音選了會先播一次給你聽。"
+          }
+        }
+      }
+    },
+    "1 選平台 · 2 輸入名稱 · 3 選棋局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Choose a site · 2 Enter a username · 3 Pick a game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Elige plataforma · 2 Introduce usuario · 3 Elige partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Escolha a plataforma · 2 Digite o usuário · 3 Escolha a partida"
+          }
+        }
+      }
+    },
+    "使用 Chess.com 或 Lichess 的公開使用者名稱，不需要密碼。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use your public Chess.com or Lichess username. No password needed."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa tu nombre público de Chess.com o Lichess. No necesitas contraseña."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use seu nome público do Chess.com ou Lichess. Não precisa de senha."
+          }
+        }
+      }
+    },
+    "輸入棋站名稱，選一局最近對局，開始復盤。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your chess username, pick a recent game, and review it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce tu usuario de ajedrez, elige una partida reciente y revísala."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite seu usuário de xadrez, escolha uma partida recente e revise."
+          }
+        }
+      }
+    },
+    "輸入棋站帳號": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter chess username"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce tu usuario de ajedrez"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite seu usuário de xadrez"
+          }
+        }
+      }
+    },
+    "選擇棋站帳號": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose chess username"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige tu usuario de ajedrez"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha seu usuário de xadrez"
+          }
+        }
+      }
+    },
+    "最近使用": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently used"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usados recientemente"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usados recentemente"
+          }
+        }
+      }
+    },
+    "載入最近對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load recent games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargar partidas recientes"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carregar partidas recentes"
+          }
+        }
+      }
+    },
+    "確認帳號並載入對局…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking username and loading games…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobando usuario y cargando partidas…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificando usuário e carregando partidas…"
+          }
+        }
+      }
+    },
+    "請輸入棋站的使用者名稱，不是網址或 Email。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a chess username, rather than a URL or email address."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce un usuario de ajedrez, en lugar de una URL o correo electrónico."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite um usuário de xadrez, em vez de URL ou e-mail."
+          }
+        }
+      }
+    },
+    "貼上 PGN 棋譜": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste PGN"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar PGN"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colar PGN"
+          }
+        }
+      }
+    },
+    "匯入方式": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import options"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opciones de importación"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opções de importação"
+          }
+        }
+      }
+    },
+    "對局連結": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Game link"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enlace de partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link da partida"
+          }
+        }
+      }
+    },
+    "貼上 Chess.com 或 Lichess 對局網址": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste a Chess.com or Lichess game URL"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega la URL de una partida de Chess.com o Lichess"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cole a URL de uma partida do Chess.com ou Lichess"
+          }
+        }
+      }
+    },
+    "先複製棋局網址，再貼到上方；也可以直接輸入。剪貼簿沒有文字時，貼上按鈕不會啟用。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy a game URL, then paste it above, or type it directly. Paste is unavailable when the clipboard has no text."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia la URL de una partida y pégala arriba, o escríbela. Pegar no está disponible si el portapapeles no contiene texto."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copie a URL de uma partida e cole acima, ou digite. Colar fica indisponível quando a área de transferência não tem texto."
+          }
+        }
+      }
+    },
+    "匯入對局連結": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import game link"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar enlace de partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar link da partida"
+          }
+        }
+      }
+    },
+    "請輸入 Chess.com 或 Lichess 的棋局網址；PGN 請使用下方入口。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a Chess.com or Lichess game URL. Use the option below for PGN."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce una URL de partida de Chess.com o Lichess. Para PGN, usa la opción de abajo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite a URL de uma partida do Chess.com ou Lichess. Para PGN, use a opção abaixo."
+          }
+        }
+      }
+    },
+    "從棋站分享一局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share a game from your chess site"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir una partida desde la plataforma"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartilhar uma partida da plataforma"
+          }
+        }
+      }
+    },
+    "輸入棋站帳號載入最近對局，或使用 PGN／棋局連結匯入。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your chess username to load recent games, or import PGN or a game link."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce tu usuario para cargar partidas recientes, o importa PGN o un enlace."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite seu usuário para carregar partidas recentes, ou importe PGN ou um link."
+          }
+        }
+      }
+    },
+    "重新載入對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a cargar partidas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recarregar partidas"
+          }
+        }
+      }
+    },
+    "新棋局提醒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New game reminders"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisos de partidas nuevas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lembretes de novas partidas"
+          }
+        }
+      }
+    },
+    "有新棋局時提醒我": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind me about new games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisarme de partidas nuevas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisar sobre novas partidas"
+          }
+        }
+      }
+    },
+    "偏好提醒時間": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferred reminder time"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora preferida del aviso"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horário preferido do lembrete"
+          }
+        }
+      }
+    },
+    "多個帳號合併提醒，每天最多一則，至少間隔 24 小時。22:00–09:00 休息；背景檢查時間由 iOS 安排。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One combined reminder for all usernames, at most once a day and 24 hours apart. Quiet hours: 22:00–09:00. iOS schedules background checks."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un aviso combinado para todos los usuarios, como máximo uno al día y con 24 horas de separación. Descanso: 22:00–09:00. iOS programa las comprobaciones."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um lembrete para todos os usuários, no máximo um por dia, com intervalo de 24 horas. Descanso: 22:00–09:00. O iOS agenda as verificações."
+          }
+        }
+      }
+    },
+    "追蹤的棋站帳號": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracked chess usernames"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuarios de ajedrez seguidos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuários de xadrez acompanhados"
+          }
+        }
+      }
+    },
+    "尚未檢查": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not checked yet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin comprobar aún"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainda não verificado"
+          }
+        }
+      }
+    },
+    "暫時無法更新，稍後重試": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to refresh right now. Try again later."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede actualizar ahora. Inténtalo más tarde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível atualizar agora. Tente mais tarde."
+          }
+        }
+      }
+    },
+    "先輸入棋站帳號，再開啟新棋局提醒。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a chess username before enabling new game reminders."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce un usuario de ajedrez antes de activar los avisos."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite um usuário de xadrez antes de ativar os lembretes."
+          }
+        }
+      }
+    },
+    "通知未開啟，可到 iOS 設定允許 Rookie Lab 通知。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off. You can allow Rookie Lab notifications in iOS Settings."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notificaciones están desactivadas. Puedes permitirlas en Ajustes de iOS."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As notificações estão desativadas. Você pode permiti-las nos Ajustes do iOS."
+          }
+        }
+      }
+    },
+    "開啟 iOS 設定": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open iOS Settings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes de iOS"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes do iOS"
+          }
+        }
+      }
+    },
+    "有新棋局可以復盤": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New games ready to review"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay partidas nuevas para revisar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novas partidas para revisar"
+          }
+        }
+      }
+    },
+    "打開選一局，看看關鍵局面與當時可以走的選擇。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the app and pick a game to explore its key positions and alternatives."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre la app y elige una partida para ver posiciones clave y alternativas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o app e escolha uma partida para ver posições importantes e alternativas."
+          }
+        }
+      }
+    },
+    "App 版本與更新": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App version and updates"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión y actualizaciones"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versão e atualizações"
+          }
+        }
+      }
+    },
+    "目前版本": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current version"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión actual"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versão atual"
+          }
+        }
+      }
+    },
+    "檢查更新": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for updates"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar actualizaciones"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar atualizações"
+          }
+        }
+      }
+    },
+    "已檢查更新": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update check complete"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobación completada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificação concluída"
+          }
+        }
+      }
+    },
+    "前往更新": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get the update"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualizar"
+          }
+        }
+      }
+    },
+    "暫時無法檢查更新，請稍後重試。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to check for updates. Please try again later."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pueden buscar actualizaciones. Inténtalo más tarde."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível buscar atualizações. Tente mais tarde."
+          }
+        }
+      }
+    },
+    "開發版本，不套用更新門檻": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Development build; update requirements do not apply"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión de desarrollo; no se exige actualización"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versão de desenvolvimento; atualização não exigida"
+          }
+        }
+      }
+    },
+    "請更新後再開始新分析": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update before starting a new analysis"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiza antes de iniciar un nuevo análisis"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualize antes de iniciar uma nova análise"
+          }
+        }
+      }
+    },
+    "重新檢查": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobar de nuevo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificar novamente"
+          }
+        }
+      }
+    },
+    "查看過往分析": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View past analyses"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver análisis anteriores"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver análises anteriores"
+          }
+        }
+      }
+    },
+    "過往分析": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past analyses"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Análisis anteriores"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Análises anteriores"
+          }
+        }
+      }
+    },
+    "無法載入過往分析": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to load past analysis"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede cargar el análisis anterior"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível carregar a análise anterior"
+          }
+        }
+      }
+    },
+    "App 更新": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App update"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualización de la app"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualização do app"
+          }
+        }
+      }
+    },
+    "聯絡我們": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact us"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contáctanos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fale conosco"
+          }
+        }
+      }
+    },
+    "有新版本，前往更新": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New version available"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay una versión nueva"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova versão disponível"
+          }
+        }
+      }
+    },
+    "稍後提醒": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind me later"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recordar más tarde"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lembrar mais tarde"
+          }
+        }
+      }
+    },
+    "已選擇 %@ · %@，點下方一局開始分析。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected %@ · %@. Pick a game below to analyze."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleccionado %@ · %@. Elige una partida para analizar."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecionado %@ · %@. Escolha uma partida abaixo para analisar."
+          }
+        }
+      }
+    },
+    "移除 %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remover %@"
+          }
+        }
+      }
+    },
+    "%@：請先載入對局確認帳號": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: load games first to verify this username"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: carga las partidas para comprobar el usuario"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: carregue as partidas para verificar o usuário"
+          }
+        }
+      }
+    },
+    "目前版本 %@，需要 %@ 或更新版本。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current version %@. Version %@ or later is required."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión actual %@. Se requiere %@ o posterior."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versão atual %@. É necessária a versão %@ ou posterior."
+          }
+        }
+      }
+    },
+    "選平台、輸入使用者名稱，再選一局開始分析。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your chess site, enter a username, then pick a game to analyze."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige la plataforma, introduce tu usuario y selecciona una partida para analizar."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha a plataforma, digite seu usuário e selecione uma partida para analisar."
+          }
+        }
+      }
+    },
+    "管理棋站帳號": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage chess usernames"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestionar usuarios de ajedrez"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerenciar usuários de xadrez"
+          }
+        }
+      }
+    },
+    "偵測到新對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New game detected"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se ha detectado una partida nueva"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova partida encontrada"
+          }
+        }
+      }
+    },
+    "最近有尚未分析的對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent games waiting for analysis"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay partidas recientes sin analizar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Há partidas recentes para analisar"
+          }
+        }
+      }
+    },
+    "分析最新一局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze the latest game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizar la última partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analisar a partida mais recente"
+          }
+        }
+      }
+    },
+    "分析這一局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze this game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizar esta partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analisar esta partida"
+          }
+        }
+      }
+    },
+    "最近的對局都已分析": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your recent games are analyzed"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus partidas recientes ya están analizadas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas partidas recentes já foram analisadas"
+          }
+        }
+      }
+    },
+    "查看最近復盤": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View the latest review"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver la última revisión"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver a revisão mais recente"
+          }
+        }
+      }
+    },
+    "檢查新對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for new games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar partidas nuevas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar novas partidas"
+          }
+        }
+      }
+    },
+    "檢查新對局…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking for new games…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando partidas nuevas…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando novas partidas…"
+          }
+        }
+      }
+    },
+    "目前沒有匯入的棋局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No imported games yet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay partidas importadas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainda não há partidas importadas"
+          }
+        }
+      }
+    },
+    "這個帳號目前沒有可分析的棋局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No games available for this username yet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este usuario aún no tiene partidas disponibles para analizar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este usuário ainda não tem partidas disponíveis para analisar"
+          }
+        }
+      }
+    },
+    "暫時無法更新對局": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to refresh games right now"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pueden actualizar las partidas ahora"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível atualizar as partidas agora"
+          }
+        }
+      }
+    },
+    "暫時無法更新，顯示上次載入的對局。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to refresh. Showing previously loaded games."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede actualizar. Se muestran las partidas cargadas anteriormente."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível atualizar. Exibindo as partidas carregadas anteriormente."
+          }
+        }
+      }
+    },
+    "復盤": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze a game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizar una partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analisar uma partida"
+          }
+        }
+      }
+    },
+    "在「復盤」點「匯入一局」，貼上完整 PGN，選擇你執白或執黑。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Analyze a game, tap Import a game, paste the full PGN and choose your side."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Analizar una partida, toca Importar una partida, pega el PGN completo y elige tu lado."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Em Analisar uma partida, toque em Importar uma partida, cole o PGN completo e escolha seu lado."
+          }
+        }
+      }
+    },
+    "使用統計與隱私": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usage & Privacy"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uso y privacidad"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uso e privacidade"
+          }
+        }
+      }
+    },
+    "使用統計與診斷": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usage analytics & diagnostics"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estadísticas y diagnósticos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estatísticas e diagnósticos"
+          }
+        }
+      }
+    },
+    "分享我輸入的棋站帳號": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the chess accounts I entered"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir las cuentas de ajedrez que introduje"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartilhar as contas de xadrez que informei"
+          }
+        }
+      }
+    },
+    "記錄本 App 的頁面、停留時間、分析與廣告互動，以及手機機型、系統與 App 版本，協助改善功能與穩定度。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record app screens, time spent, analysis and ad interactions, device model, OS and app version to improve features and reliability."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra pantallas, tiempo, análisis e interacciones con anuncios, modelo del dispositivo y versiones para mejorar las funciones y la estabilidad."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra telas, tempo, análises e interações com anúncios, modelo e versões para melhorar os recursos e a estabilidade."
+          }
+        }
+      }
+    },
+    "開啟後，你在此裝置連接的 Chess.com／Lichess 帳號會與使用紀錄關聯，傳至 Rookie Lab 自有資料庫，供功能使用分析與支援。不傳給 Firebase Analytics 或廣告平台，也不代表已驗證棋站所有權。關閉會要求刪除伺服器上的帳號關聯。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, connected Chess.com/Lichess handles are linked to this installation’s usage in Rookie Lab’s private database for product analysis and support. Handles are not sent to Firebase Analytics or ad services, and do not verify account ownership. Turning this off requests removal of server-side account associations."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al activarlo, los nombres conectados de Chess.com/Lichess se vinculan al uso de esta instalación en la base privada de Rookie Lab para análisis y asistencia. No se envían a Firebase Analytics ni a servicios publicitarios, ni verifican la titularidad. Desactivarlo solicita borrar las vinculaciones del servidor."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ao ativar, os nomes conectados do Chess.com/Lichess são associados ao uso desta instalação no banco privado do Rookie Lab para análise e suporte. Não são enviados ao Firebase Analytics nem a serviços de anúncios, e não comprovam a titularidade. Desativar solicita remover as associações do servidor."
+          }
+        }
+      }
+    },
+    "統計使用隨機安裝識別碼，不讀取其他 App 的活動、訊息或手機內容。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analytics use a random installation ID. They do not read other apps, messages or phone contents."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las estadísticas usan un identificador aleatorio y no leen otras apps, mensajes ni contenidos del teléfono."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As estatísticas usam um ID aleatório e não leem outros apps, mensagens nem conteúdos do telefone."
+          }
+        }
+      }
+    },
+    "同步中…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizando…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizando…"
+          }
+        }
+      }
+    },
+    "設定已同步": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings synced"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes sincronizados"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes sincronizados"
+          }
+        }
+      }
+    },
+    "尚未同步，連線恢復後會重試": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not synced yet; retrying when connected"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún sin sincronizar; se reintentará al conectar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainda não sincronizado; nova tentativa ao conectar"
+          }
+        }
+      }
+    },
+    "開局：%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apertura: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abertura: %@"
+          }
+        }
+      }
+    },
+    "到第 %lld 手都是已收錄的理論走法。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Book moves through move %lld."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movimientos de teoría hasta la jugada %lld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lances de teoria até o lance %lld."
+          }
+        }
+      }
+    },
+    "你 %@：局勢逆轉": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You %@: the game turns"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tú %@: la partida da un giro"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você %@: a partida vira"
+          }
+        }
+      }
+    },
+    "對手 %@：局勢逆轉，你的機會來了": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opponent %@: the game turns. Your chance is coming"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rival %@: la partida da un giro. Se acerca tu oportunidad"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adversário %@: a partida vira. Sua chance chegou"
+          }
+        }
+      }
+    },
+    "你的勝率 %lld%% → %lld%%": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your win chance %lld%% → %lld%%"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu probabilidad de ganar %lld%% → %lld%%"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua chance de vitória %lld%% → %lld%%"
+          }
+        }
+      }
+    },
+    "這一步是這局的轉折點。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This move is the turning point of the game."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta jugada es el punto de inflexión de la partida."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este lance é a virada da partida."
+          }
+        }
+      }
+    },
+    "最近的對局裡，這是你第一次執白下「%@」。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Among your recent games, this is your first %@ with White."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre tus partidas recientes, es tu primera %@ con blancas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre suas partidas recentes, é sua primeira %@ de brancas."
+          }
+        }
+      }
+    },
+    "最近的對局裡，這是你第一次執黑下「%@」。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Among your recent games, this is your first %@ with Black."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre tus partidas recientes, es tu primera %@ con negras."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre suas partidas recentes, é sua primeira %@ de pretas."
+          }
+        }
+      }
+    },
+    "你最近執白下「%@」%lld 局：%lld 勝 %lld 和 %lld 負，勝率 %lld%%。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your recent %@ games with White: %lld (%lld W, %lld D, %lld L), %lld%% won."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus partidas recientes de %@ con blancas: %lld (%lld G, %lld T, %lld P), %lld%% ganadas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas partidas recentes de %@ com as brancas: %lld (%lld V, %lld E, %lld D), %lld%% vencidas."
+          }
+        }
+      }
+    },
+    "你最近執黑下「%@」%lld 局：%lld 勝 %lld 和 %lld 負，勝率 %lld%%。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your recent %@ games with Black: %lld (%lld W, %lld D, %lld L), %lld%% won."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus partidas recientes de %@ con negras: %lld (%lld G, %lld T, %lld P), %lld%% ganadas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas partidas recentes de %@ com as pretas: %lld (%lld V, %lld E, %lld D), %lld%% vencidas."
+          }
+        }
+      }
+    },
+    "你和 %@ 的對局結束了，打開看看關鍵局面。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your game against %@ is over. Open it to see the key moments."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu partida contra %@ terminó. Ábrela para ver los momentos clave."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua partida contra %@ terminou. Abra para ver os momentos-chave."
+          }
+        }
+      }
+    },
+    "有 %1$@ 局新對局，最近一局對 %2$@，打開看看關鍵局面。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ new games, the latest against %2$@. Open them to see the key moments."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ partidas nuevas, la última contra %2$@. Ábrelas para ver los momentos clave."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ partidas novas, a última contra %2$@. Abra para ver os momentos-chave."
+          }
+        }
+      }
+    },
+    "下完棋約 10–20 分鐘後提醒。多個帳號合併，每天最多一則；22:00–09:00 不打擾。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll get a reminder about 10–20 minutes after you finish playing. All accounts share one notification, at most once a day, with none from 22:00 to 09:00."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te avisamos unos 10–20 minutos después de terminar de jugar. Todas las cuentas comparten un aviso, como máximo uno al día, sin avisos de 22:00 a 09:00."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você recebe um lembrete cerca de 10–20 minutos depois de terminar de jogar. Todas as contas compartilham uma notificação, no máximo uma por dia, sem notificações das 22:00 às 09:00."
+          }
+        }
+      }
+    },
+    "沒有新棋局時不提醒；打開 App 後，已出現的新棋局不再另外提醒。首次加入帳號不補發歷史對局。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reminder without new games. Once you open the app, games already shown won't trigger another reminder. Games from before you add an account aren't included."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin partidas nuevas no hay aviso. Al abrir la app, las partidas ya mostradas no generan otro aviso. No se incluyen partidas anteriores a añadir la cuenta."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sem partidas novas, não há lembrete. Ao abrir o app, as partidas já exibidas não geram outro lembrete. Partidas anteriores à inclusão da conta não entram."
+          }
+        }
+      }
+    },
+    "開啟提醒後，追蹤的棋站帳號名稱與這台裝置的通知代碼會傳到 Rookie Lab 伺服器，只用來檢查新對局；關閉提醒即刪除。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With reminders on, the chess account names you follow and this device's notification token are sent to the Rookie Lab server, only to check for new games. Turning reminders off deletes them."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con los avisos activados, los nombres de las cuentas que sigues y el token de notificaciones de este dispositivo se envían al servidor de Rookie Lab, solo para buscar partidas nuevas. Al desactivarlos, se eliminan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Com os lembretes ativados, os nomes das contas que você segue e o token de notificações deste aparelho são enviados ao servidor da Rookie Lab, apenas para verificar partidas novas. Ao desativá-los, eles são apagados."
+          }
+        }
+      }
+    },
+    "你 %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tú %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você %@"
+          }
+        }
+      }
+    },
+    "對手 %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opponent %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rival %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adversário %@"
+          }
+        }
+      }
+    },
+    "你守住了：%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You defended: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te defendiste: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você se defendeu: %@"
+          }
+        }
+      }
+    },
+    "對手 %@ 製造了威脅，你沒有讓它得逞。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your opponent's %@ made a threat, and you stopped it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La jugada %@ del rival creó una amenaza y la frenaste."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O lance %@ do adversário criou uma ameaça e você a impediu."
+          }
+        }
+      }
+    },
+    "對手 %@：沒抓到你 %@ 的漏洞": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opponent %@: missed the chance your %@ left"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rival %@: no aprovechó el hueco de tu %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adversário %@: não aproveitou a brecha do seu %@"
+          }
+        }
+      }
+    },
+    "綠色箭頭是對手可以走的 %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The green arrow shows %@, your opponent's better move"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La flecha verde muestra %@, la mejor jugada del rival"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A seta verde mostra %@, o melhor lance do adversário"
+          }
+        }
+      }
+    },
+    "另外 %lld 步也值得看": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more moves worth a look"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld jugadas más para revisar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais %lld lances para rever"
+          }
+        }
+      }
+    },
+    "對手 · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opponent · %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rival · %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adversário · %@"
+          }
+        }
+      }
+    },
+    "訂閱只移除廣告，單局分析與快速復盤的內容都一樣。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscribing only removes ads. Game analysis and quick review stay the same."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suscripción solo quita los anuncios. El análisis y la revisión rápida no cambian."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A assinatura só remove os anúncios. A análise e a revisão rápida continuam iguais."
+          }
+        }
+      }
+    },
+    "—": {},
+    "%@ · %@": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld 種變化": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · %2$lld 種變化"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld lines"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld líneas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld linhas"
+          }
+        }
+      }
+    },
+    "%@ · vs %@": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ · vs %2$@"
+          }
+        }
+      }
+    },
+    "%@ 讓王離開中央，也把車帶到更靠近中央的格子。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ gets the king out of the center and brings the rook closer to it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ saca al rey del centro y acerca la torre al centro."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tira o rei do centro e aproxima a torre do centro."
+          }
+        }
+      }
+    },
+    "%@。%@ 是這個局面已收錄的走法。": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@。%2$@ 是這個局面已收錄的走法。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. %@ is a book move in this position."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. %@ es una jugada de teoría en esta posición."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. %@ é um lance de teoria nesta posição."
+          }
+        }
+      }
+    },
+    "%lld 個情境": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld positions"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld posiciones"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld posições"
+          }
+        }
+      }
+    },
+    "%lld 個月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld months"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld meses"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld meses"
+          }
+        }
+      }
+    },
+    "%lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld días"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dias"
+          }
+        }
+      }
+    },
+    "%lld 局 · 理論平均 %.1f 步": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld 局 · 理論平均 %2$.1f 步"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld games · %.1f book moves on average"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld partidas · %.1f jugadas de teoría de media"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld partidas · %.1f lances de teoria em média"
+          }
+        }
+      }
+    },
+    "%lld 局：%lld 勝、%lld 和、%lld 負": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld 局：%2$lld 勝、%3$lld 和、%4$lld 負"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld games: %lld W, %lld D, %lld L"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld partidas: %lld G, %lld T, %lld P"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld partidas: %lld V, %lld E, %lld D"
+          }
+        }
+      }
+    },
+    "%lld 局裡有 %lld 局是你先離開理論，先練常遇到的前幾步。": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld 局裡有 %2$lld 局是你先離開理論，先練常遇到的前幾步。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In %lld games, you left the book first in %lld. Start with the moves you meet most."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En %lld partidas, saliste de la teoría primero en %lld. Empieza por las jugadas más frecuentes."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Em %lld partidas, você saiu da teoria primeiro em %lld. Comece pelos lances mais frequentes."
+          }
+        }
+      }
+    },
+    "%lld 年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld years"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld años"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld anos"
+          }
+        }
+      }
+    },
+    "%lld 條路線到期，到「練習」一起複習。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld lines are due. Review them together in Practice."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld líneas pendientes. Repásalas juntas en Práctica."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld linhas pendentes. Revise todas em Prática."
+          }
+        }
+      }
+    },
+    "%lld 週": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld weeks"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld semanas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld semanas"
+          }
+        }
+      }
+    },
+    "%lld%%": {},
+    "10 局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 partidas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 partidas"
+          }
+        }
+      }
+    },
+    "20 局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "20 games"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "20 partidas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "20 partidas"
+          }
+        }
+      }
+    },
+    "Premium": {},
+    "上一步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous move"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jugada anterior"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lance anterior"
+          }
+        }
+      }
+    },
+    "下次複習：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next review: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próximo repaso: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próxima revisão: %@"
+          }
+        }
+      }
+    },
+    "不用帳號也可以學習開局。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can learn openings without an account."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes aprender aperturas sin cuenta."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você pode aprender aberturas sem conta."
+          }
+        }
+      }
+    },
+    "中斷配對": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unpair"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desvincular"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desvincular"
+          }
+        }
+      }
+    },
+    "主線 · 第 %lld 小段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main line · part %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Línea principal · parte %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linha principal · parte %lld"
+          }
+        }
+      }
+    },
+    "你先離開理論 %lld 次，對手先離開 %lld 次。": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "你先離開理論 %1$lld 次，對手先離開 %2$lld 次。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You left the book first %lld times; your opponent did %lld times."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saliste de la teoría primero %lld veces; tu rival, %lld veces."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você saiu da teoria primeiro %lld vezes; o adversário, %lld vezes."
+          }
+        }
+      }
+    },
+    "你執哪一方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which side did you play?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Con qué color jugaste?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Com qual cor você jogou?"
+          }
+        }
+      }
+    },
+    "你當時走了 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You played %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jugaste %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você jogou %@"
+          }
+        }
+      }
+    },
+    "你的開局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your openings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus aperturas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas aberturas"
+          }
+        }
+      }
+    },
+    "你離開理論的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you left the book"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Donde saliste de la teoría"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onde você saiu da teoria"
+          }
+        }
+      }
+    },
+    "使用同一種時間制的最近對局。熟悉度只描述理論走法，不代表棋力；離開理論不等於走錯。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent games with the same time control. Familiarity only describes book moves, not playing strength; leaving the book is not a mistake."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partidas recientes con el mismo ritmo. La familiaridad solo describe las jugadas de teoría, no tu nivel; salir de la teoría no es un error."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partidas recentes com o mesmo ritmo. A familiaridade só descreve os lances de teoria, não o seu nível; sair da teoria não é um erro."
+          }
+        }
+      }
+    },
+    "值得先練": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worth practicing first"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vale la pena practicar primero"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vale praticar primeiro"
+          }
+        }
+      }
+    },
+    "先探索開局，不用帳號": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore openings first, no account needed"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explora aperturas primero, sin cuenta"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore aberturas primeiro, sem conta"
+          }
+        }
+      }
+    },
+    "先看一遍": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch it once"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Míralo una vez"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja uma vez"
+          }
+        }
+      }
+    },
+    "先走出一條完整的理論路線（最多 12 手），就能自己練並加入每日複習。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play a full book line first (up to 12 moves), then practice it and add it to daily review."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Juega primero una línea de teoría completa (hasta 12 jugadas) y luego practícala y añádela al repaso diario."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jogue primeiro uma linha de teoria completa (até 12 lances), depois pratique e adicione à revisão diária."
+          }
+        }
+      }
+    },
+    "共 %lld 張，學會 %lld 張（連續答對 %lld 次）。練過至少隔 3 天再出，答對後隔 3 天、7 天，之後越來越久才再出。": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "共 %1$lld 張，學會 %2$lld 張（連續答對 %3$lld 次）。練過至少隔 3 天再出，答對後隔 3 天、7 天，之後越來越久才再出。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld cards, %lld learned (%lld correct in a row). Cards come back at least 3 days after practice, then after 3 days, 7 days and longer."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tarjetas, %lld aprendidas (%lld aciertos seguidos). Vuelven al menos 3 días después de practicar, luego a los 3 días, 7 días y más."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld cartões, %lld aprendidos (%lld acertos seguidos). Voltam pelo menos 3 dias depois da prática, depois em 3 dias, 7 dias e mais."
+          }
+        }
+      }
+    },
+    "再看這一步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch this move again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver esta jugada otra vez"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver este lance de novo"
+          }
+        }
+      }
+    },
+    "再練一次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practice again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practicar otra vez"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Praticar de novo"
+          }
+        }
+      }
+    },
+    "分辨不同變化": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell the lines apart"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distingue las variantes"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diferencie as variantes"
+          }
+        }
+      }
+    },
+    "到分析板看看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try it on the analysis board"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probar en el tablero de análisis"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testar no tabuleiro de análise"
+          }
+        }
+      }
+    },
+    "加入每日複習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to daily review"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir al repaso diario"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar à revisão diária"
+          }
+        }
+      }
+    },
+    "勝負是整局結果，不直接代表開局表現。可練路線取自最近的實戰理論，最多 6 手。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Results are for the whole game, not the opening alone. Practice lines come from your recent book moves, up to 6 moves."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El resultado es de toda la partida, no solo de la apertura. Las líneas de práctica salen de tu teoría reciente, hasta 6 jugadas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O resultado é da partida inteira, não só da abertura. As linhas de prática vêm da sua teoria recente, até 6 lances."
+          }
+        }
+      }
+    },
+    "匯入": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar"
+          }
+        }
+      }
+    },
+    "匯入 PGN": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import PGN"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar PGN"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar PGN"
+          }
+        }
+      }
+    },
+    "匯入對局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partida importada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partida importada"
+          }
+        }
+      }
+    },
+    "可以複習了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to review"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista para repasar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronta para revisar"
+          }
+        }
+      }
+    },
+    "回到練習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to practice"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a práctica"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voltar à prática"
+          }
+        }
+      }
+    },
+    "回到關卡路徑": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the level path"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver al recorrido"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voltar ao percurso"
+          }
+        }
+      }
+    },
+    "在分析板走出一條理論路線，就能加入每日複習。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play a book line on the analysis board to add it to daily review."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Juega una línea de teoría en el tablero de análisis para añadirla al repaso diario."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jogue uma linha de teoria no tabuleiro de análise para adicioná-la à revisão diária."
+          }
+        }
+      }
+    },
+    "執白課程": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White course"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curso con blancas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curso de brancas"
+          }
+        }
+      }
+    },
+    "執黑課程": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black course"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curso con negras"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curso de pretas"
+          }
+        }
+      }
+    },
+    "學習停點": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Study stop"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parada de estudio"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parada de estudo"
+          }
+        }
+      }
+    },
+    "學這個開局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Learn this opening"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprender esta apertura"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprender esta abertura"
+          }
+        }
+      }
+    },
+    "完成一個關卡": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level complete"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nivel completado"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nível concluído"
+          }
+        }
+      }
+    },
+    "完成這一步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish this move"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completar esta jugada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concluir este lance"
+          }
+        }
+      }
+    },
+    "已加入每日複習（點一下取消）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to daily review (tap to undo)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadida al repaso diario (toca para deshacer)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionada à revisão diária (toque para desfazer)"
+          }
+        }
+      }
+    },
+    "已完成 %lld／%lld 關": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "已完成 %1$lld／%2$lld 關"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld levels done"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de %lld niveles hechos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de %lld níveis concluídos"
+          }
+        }
+      }
+    },
+    "已暫停": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En pausa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pausado"
+          }
+        }
+      }
+    },
+    "已走 %lld／%lld 步": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "已走 %1$lld／%2$lld 步"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld moves played"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de %lld jugadas hechas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de %lld lances feitos"
+          }
+        }
+      }
+    },
+    "已離開收錄的開局理論": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out of the book"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuera de la teoría"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fora da teoria"
+          }
+        }
+      }
+    },
+    "已顯示部分復盤結果": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing part of the review"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrando parte del repaso"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrando parte da revisão"
+          }
+        }
+      }
+    },
+    "廣告隱私選項": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad privacy options"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opciones de privacidad de anuncios"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opções de privacidade de anúncios"
+          }
+        }
+      }
+    },
+    "引擎分數以白方為準；＋是白方較好。非理論走法不一定是壞棋。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine scores are from White's side; + means White is better. A move outside the book is not necessarily bad."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La puntuación del motor es desde blancas; + significa que blancas están mejor. Una jugada fuera de la teoría no es necesariamente mala."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pontuação do motor é do lado das brancas; + significa que as brancas estão melhor. Um lance fora da teoria não é necessariamente ruim."
+          }
+        }
+      }
+    },
+    "引擎建議": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engine suggestion"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugerencia del motor"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugestão do motor"
+          }
+        }
+      }
+    },
+    "後續 %lld 條變化": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more lines"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld líneas más"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais %lld linhas"
+          }
+        }
+      }
+    },
+    "從第一步探索理論、比較不同變化": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore the theory from move one and compare lines"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explora la teoría desde la primera jugada y compara líneas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore a teoria desde o primeiro lance e compare linhas"
+          }
+        }
+      }
+    },
+    "從這裡繼續": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue from here"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar desde aquí"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar daqui"
+          }
+        }
+      }
+    },
+    "情境回想 · %lld 題": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recall · %lld questions"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repaso · %lld preguntas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisão · %lld perguntas"
+          }
+        }
+      }
+    },
+    "我的實戰開局與複習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My openings and reviews"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mis aperturas y repasos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minhas aberturas e revisões"
+          }
+        }
+      }
+    },
+    "我的開局複習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My opening reviews"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mis repasos de apertura"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minhas revisões de abertura"
+          }
+        }
+      }
+    },
+    "我的開局路線": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My opening lines"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mis líneas de apertura"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minhas linhas de abertura"
+          }
+        }
+      }
+    },
+    "探索與實戰": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore and play"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explorar y jugar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explorar e jogar"
+          }
+        }
+      }
+    },
+    "探索這個開局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore this opening"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explorar esta apertura"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explorar esta abertura"
+          }
+        }
+      }
+    },
+    "換你走": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your move"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu jugada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua vez"
+          }
+        }
+      }
+    },
+    "改用手機復盤": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review on this phone instead"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repasar en este teléfono"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar neste celular"
+          }
+        }
+      }
+    },
+    "啟用後會將去除姓名、帳號、連結與註解的棋譜，透過 HTTPS 傳至自有伺服器運算。棋譜與結果不持久保存；配對憑證存於此裝置鑰匙圈，七天到期，伺服器重啟需重新配對。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When on, games with names, accounts, links and comments removed are sent over HTTPS to our server for analysis. Games and results are not stored; the pairing credential stays in this device's keychain, expires in seven days and must be paired again after a server restart."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al activarlo, las partidas sin nombres, cuentas, enlaces ni comentarios se envían por HTTPS a nuestro servidor para analizarlas. No se guardan partidas ni resultados; la credencial queda en el llavero de este dispositivo, caduca en siete días y hay que volver a vincular si el servidor se reinicia."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ao ativar, as partidas sem nomes, contas, links e comentários são enviadas por HTTPS ao nosso servidor para análise. Partidas e resultados não são guardados; a credencial fica nas chaves deste aparelho, expira em sete dias e precisa ser vinculada de novo se o servidor reiniciar."
+          }
+        }
+      }
+    },
+    "整局初步評估在遠端執行；精算、深入分析與延伸解說仍使用手機引擎。遠端模式需要網路。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first pass of the whole game runs remotely; refinement, deep analysis and extra explanations still use the phone's engine. Remote mode needs a network connection."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La primera evaluación de la partida se hace en remoto; el ajuste, el análisis profundo y las explicaciones extra siguen usando el motor del teléfono. El modo remoto necesita conexión."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A primeira avaliação da partida é feita remotamente; o refinamento, a análise profunda e as explicações extras continuam no motor do celular. O modo remoto precisa de conexão."
+          }
+        }
+      }
+    },
+    "整理開局中…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorting openings…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organizando aperturas…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organizando aberturas…"
+          }
+        }
+      }
+    },
+    "新增 Chess.com／Lichess 帳號": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Chess.com / Lichess account"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir una cuenta de Chess.com / Lichess"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar uma conta Chess.com / Lichess"
+          }
+        }
+      }
+    },
+    "本關完成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level done"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nivel terminado"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nível terminado"
+          }
+        }
+      }
+    },
+    "查看全部開局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all openings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver todas las aperturas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver todas as aberturas"
+          }
+        }
+      }
+    },
+    "每關 6～8 個情境，走一步就有回饋，自動接下一題。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 to 8 positions per level, feedback after every move, next one starts automatically."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De 6 a 8 posiciones por nivel, comentario tras cada jugada y la siguiente empieza sola."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De 6 a 8 posições por nível, retorno após cada lance e a próxima começa sozinha."
+          }
+        }
+      }
+    },
+    "測試配對碼": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test pairing code"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código de vinculación de prueba"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código de vinculação de teste"
+          }
+        }
+      }
+    },
+    "準備課程資料": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing lessons"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando lecciones"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando lições"
+          }
+        }
+      }
+    },
+    "熟悉": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familiar"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familiar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Familiar"
+          }
+        }
+      }
+    },
+    "獨立答對 %lld 次 · 共作答 %lld 題": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "獨立答對 %1$lld 次 · 共作答 %2$lld 題"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld correct on your own · %lld answered"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld aciertos solo · %lld respondidas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld acertos sozinho · %lld respondidas"
+          }
+        }
+      }
+    },
+    "王車易位": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Castling"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enroque"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Roque"
+          }
+        }
+      }
+    },
+    "理論候選步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Book candidates"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidatas de teoría"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidatos de teoria"
+          }
+        }
+      }
+    },
+    "用時 %lld 秒。可以再試一次，看看有哪些選擇。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You took %lld seconds. Try it again and see the options."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tardaste %lld segundos. Vuelve a intentarlo y mira las opciones."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você levou %lld segundos. Tente de novo e veja as opções."
+          }
+        }
+      }
+    },
+    "白方視角・＋是白方較好": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White's view · + means White is better"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista de blancas · + significa que blancas están mejor"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visão das brancas · + significa que as brancas estão melhor"
+          }
+        }
+      }
+    },
+    "目前整理的是匯入的對局。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing imported games."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrando partidas importadas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrando partidas importadas."
+          }
+        }
+      }
+    },
+    "目前沒有可整理的對局，仍可從分析板開始探索。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No games to sort yet. You can still explore from the analysis board."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay partidas que organizar. Puedes explorar desde el tablero de análisis."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainda não há partidas para organizar. Você pode explorar pelo tabuleiro de análise."
+          }
+        }
+      }
+    },
+    "目前沒有可用的新題，練過的題目至少隔 3 天再出": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new puzzles right now. Practiced puzzles come back after at least 3 days."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay problemas nuevos ahora. Los practicados vuelven al cabo de al menos 3 días."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não há problemas novos agora. Os praticados voltam depois de pelo menos 3 dias."
+          }
+        }
+      }
+    },
+    "目前沒有收錄的理論續步，可以繼續自由走子，或退回前一步比較。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No book continuation here. Keep playing freely, or go back a move to compare."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay continuación de teoría aquí. Sigue jugando libremente o vuelve una jugada para comparar."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não há continuação de teoria aqui. Continue jogando livremente ou volte um lance para comparar."
+          }
+        }
+      }
+    },
+    "看自己的開局、探索變化，再自己走一遍": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See your openings, explore lines, then play them yourself"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mira tus aperturas, explora variantes y juégalas tú"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja suas aberturas, explore variantes e jogue você mesmo"
+          }
+        }
+      }
+    },
+    "第 %lld 手 · 你走了 %@": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "第 %1$lld 手 · 你走了 %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move %lld · you played %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jugada %lld · jugaste %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lance %lld · você jogou %@"
+          }
+        }
+      }
+    },
+    "第 %lld 關": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nivel %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nível %lld"
+          }
+        }
+      }
+    },
+    "第 %lld 關・%@": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "new",
+            "value": "第 %1$lld 關・%2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Level %lld · %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nivel %lld · %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nível %lld · %@"
+          }
+        }
+      }
+    },
+    "練習我的開局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practice my openings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practicar mis aperturas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Praticar minhas aberturas"
+          }
+        }
+      }
+    },
+    "練習顏色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practice color"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color de práctica"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cor de prática"
+          }
+        }
+      }
+    },
+    "練這條路線": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practice this line"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Practicar esta línea"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Praticar esta linha"
+          }
+        }
+      }
+    },
+    "繼續今天的練習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue today's practice"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguir con la práctica de hoy"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar a prática de hoje"
+          }
+        }
+      }
+    },
+    "繼續學習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue learning"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguir aprendiendo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar aprendendo"
+          }
+        }
+      }
+    },
+    "自由分析板": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis board"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tablero de análisis"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tabuleiro de análise"
+          }
+        }
+      }
+    },
+    "請返回開局列表，再次開啟課程。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back to the opening list and open the course again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a la lista de aperturas y abre el curso otra vez."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volte à lista de aberturas e abra o curso de novo."
+          }
+        }
+      }
+    },
+    "變化快練": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick line drill"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Práctica rápida de variantes"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treino rápido de variantes"
+          }
+        }
+      }
+    },
+    "貼上完整棋譜": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste the full PGN"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega el PGN completo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cole o PGN completo"
+          }
+        }
+      }
+    },
+    "資料處理": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data handling"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tratamiento de datos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tratamento de dados"
+          }
+        }
+      }
+    },
+    "資料還不多，可以先練": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not much data yet. You can start practicing"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún hay pocos datos. Puedes empezar a practicar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainda há poucos dados. Você pode começar a praticar"
+          }
+        }
+      }
+    },
+    "走得淺": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shallow"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poco profundo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raso"
+          }
+        }
+      }
+    },
+    "起始局面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting position"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posición inicial"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posição inicial"
+          }
+        }
+      }
+    },
+    "起手練習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First moves"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primeras jugadas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primeiros lances"
+          }
+        }
+      }
+    },
+    "跨局報告": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-game report"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informe de varias partidas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relatório de várias partidas"
+          }
+        }
+      }
+    },
+    "輪到你，走出這條路線的下一步。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your turn: play the next move of this line."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu turno: juega la siguiente jugada de esta línea."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua vez: jogue o próximo lance desta linha."
+          }
+        }
+      }
+    },
+    "這一步你用了較多時間": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You spent extra time on this move"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pensaste más en esta jugada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você pensou mais neste lance"
+          }
+        }
+      }
+    },
+    "這也是理論走法；這次先練選定的路線，也可以到分析板比較。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is also a book move. Practice the chosen line this time, or compare on the analysis board."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "También es teoría. Esta vez practica la línea elegida, o compárala en el tablero de análisis."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Também é teoria. Desta vez pratique a linha escolhida, ou compare no tabuleiro de análise."
+          }
+        }
+      }
+    },
+    "這些對局沒有你先離開理論的局面。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In these games you never left the book first."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En estas partidas nunca saliste de la teoría primero."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nestas partidas você nunca saiu da teoria primeiro."
+          }
+        }
+      }
+    },
+    "這局的開局理論": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Book theory in this game"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teoría de esta partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teoria desta partida"
+          }
+        }
+      }
+    },
+    "這條路線走完了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Line complete"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Línea completada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linha concluída"
+          }
+        }
+      }
+    },
+    "這次只用來決定分析哪一方，不需要加入棋站帳號。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This only decides which side to analyze; no chess account is needed."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo sirve para elegir qué lado analizar; no hace falta cuenta."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Só serve para escolher qual lado analisar; não precisa de conta."
+          }
+        }
+      }
+    },
+    "這次有參考提示或重新嘗試，下次再自己走一遍。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You used a hint or retried this time. Next time, play it through on your own."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta vez usaste una pista o lo repetiste. La próxima, juégalo tú solo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desta vez você usou uma dica ou repetiu. Na próxima, jogue sozinho."
+          }
+        }
+      }
+    },
+    "這次沒有找到對應的理論路線，仍可從開局分析板開始探索。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching book line this time. You can still explore from the opening board."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta vez no hay una línea de teoría que coincida. Puedes explorar desde el tablero de aperturas."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desta vez não há uma linha de teoria correspondente. Você pode explorar pelo tabuleiro de aberturas."
+          }
+        }
+      }
+    },
+    "這次自己走完了，下次換個時間再練。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You played it through on your own. Practice again another time."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo jugaste tú solo. Vuelve a practicar en otro momento."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você jogou sozinho. Pratique de novo outra hora."
+          }
+        }
+      }
+    },
+    "這步不在目前收錄的理論裡，不代表是壞棋。可以再試一次，或到分析板看看。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This move isn't in the book we have, which doesn't make it bad. Try again, or look on the analysis board."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta jugada no está en la teoría que tenemos, lo que no la hace mala. Inténtalo otra vez o mira el tablero de análisis."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este lance não está na teoria que temos, o que não o torna ruim. Tente de novo ou veja no tabuleiro de análise."
+          }
+        }
+      }
+    },
+    "這段棋譜無法完整讀取，請確認是合法的 PGN。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This game couldn't be read in full. Check that it's a valid PGN."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo leer toda la partida. Revisa que sea un PGN válido."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível ler a partida inteira. Confira se é um PGN válido."
+          }
+        }
+      }
+    },
+    "這裡試過的變化": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lines you tried here"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Líneas que probaste aquí"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linhas que você testou aqui"
+          }
+        }
+      }
+    },
+    "連接伺服器": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to server"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar al servidor"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar ao servidor"
+          }
+        }
+      }
+    },
+    "遠端復盤試驗": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote review trial"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba de repaso remoto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teste de revisão remota"
+          }
+        }
+      }
+    },
+    "選擇你執哪一方，打開這局的復盤": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your side to open this game's review"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige tu color para abrir el repaso de esta partida"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha sua cor para abrir a revisão desta partida"
+          }
+        }
+      }
+    },
+    "配對": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincular"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincular"
+          }
+        }
+      }
+    },
+    "重新載入": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recargar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recarregar"
+          }
+        }
+      }
+    },
+    "重試": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tentar de novo"
+          }
+        }
+      }
+    },
+    "重走這一步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replay this move"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Repetir esta jugada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refazer este lance"
+          }
+        }
+      }
+    },
+    "開始這個開局": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start this opening"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar esta apertura"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Começar esta abertura"
+          }
+        }
+      }
+    },
+    "開局分析板": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening board"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tablero de aperturas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tabuleiro de aberturas"
+          }
+        }
+      }
+    },
+    "開局理論：Lichess chess-openings（CC0）。已隨 App 下載，離線也能探索與練習。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening theory: Lichess chess-openings (CC0). Downloaded with the app, so you can explore and practice offline."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teoría de aperturas: Lichess chess-openings (CC0). Viene con la app, así que puedes explorar y practicar sin conexión."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teoria de aberturas: Lichess chess-openings (CC0). Vem com o app, então você pode explorar e praticar offline."
+          }
+        }
+      }
+    },
+    "開局練習": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening practice"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Práctica de aperturas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prática de aberturas"
+          }
+        }
+      }
+    },
+    "開局練習棋盤": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening practice board"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tablero de práctica de aperturas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tabuleiro de prática de aberturas"
+          }
+        }
+      }
+    },
+    "開局課程": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening courses"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cursos de aperturas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cursos de aberturas"
+          }
+        }
+      }
+    },
+    "隨機出現一種變化，練下一步。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A random line appears; play the next move."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparece una variante al azar; juega la siguiente jugada."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparece uma variante aleatória; jogue o próximo lance."
+          }
+        }
+      }
+    },
+    "隱私政策": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy policy"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Política de privacidad"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Política de privacidade"
+          }
+        }
+      }
+    },
+    "題目是你對局裡錯過的好機會：當時有勝勢、只差一步。練過的進「複習中」，隔 3 天、7 天、再久一點再出；自己連續走對 %lld 次就「已熟練」。看過答案或跳過的題，也至少隔 3 天才再出。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puzzles are good chances you missed in your games: you were winning and one move away. Practiced puzzles move to \"Reviewing\" and return after 3 days, 7 days and longer; play it right %lld times in a row and it's \"Mastered\". Puzzles where you saw the answer or skipped also return after at least 3 days."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los problemas son buenas ocasiones que dejaste pasar: ibas ganando y estabas a una jugada. Los practicados pasan a «En repaso» y vuelven a los 3 días, 7 días y más; acierta %lld veces seguidas y queda «Dominado». Los que viste o saltaste también vuelven al cabo de al menos 3 días."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os problemas são boas chances que você perdeu: estava ganhando e a um lance. Os praticados vão para \"Em revisão\" e voltam em 3 dias, 7 dias e mais; acerte %lld vezes seguidas e fica \"Dominado\". Os que você viu a resposta ou pulou também voltam depois de pelo menos 3 dias."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

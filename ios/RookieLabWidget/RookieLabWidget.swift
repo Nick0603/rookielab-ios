@@ -91,7 +91,7 @@ struct WidgetView: View {
         HStack {
           Ring(s: s).frame(width: 54, height: 54)
           Spacer()
-          Image(s.done >= s.goal ? "coach-cheer" : "coach-think").resizable().scaledToFit().frame(width: 40, height: 40)
+          Image(s.done >= s.goal ? "accent-rook" : "accent-bishop").resizable().scaledToFit().accessibilityHidden(true).frame(width: 40, height: 40)
         }
         Text(title).font(.caption.bold()).foregroundStyle(ink).lineLimit(1)
         Text(streakText).font(.caption2).foregroundStyle(orange).lineLimit(1)

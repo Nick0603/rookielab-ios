@@ -84,3 +84,18 @@ No sign-in is required. On first launch, choose Chess.com and enter the public u
 6. 殘局：`-demo chesscom:rookielab-io -demoLesson lucena`
 
 拍好後 `python3 ios/store/frame.py <截圖資料夾> ios/store/screenshots/zh-Hant` 加上標題。
+
+## B-23／F-52 量測更新（2026-11-07，正式上架前核對）
+
+新測試版加入可選的棋站帳號關聯；帳號名稱與安裝ID及產品互動在自有D1關聯，因此不可繼續將所有產品互動／使用者ID一律宣告為「不連結身分」。需依實際發布配置，在App Store Connect核對「使用者ID／產品互動／廣告資料／診斷資料」及分析、App功能用途，將能連到帳號的資料如實標示；自有統計不等同跨公司追蹤。正式廣告SDK與Firebase Analytics二進位尚未隨GPL客戶端發布，不能替未啟用SDK勾選已收集；發布時另核對供應商資料與授權、必要同意。四語網站隱私政策與App使用統計／帳號開關已更新。此段為本輪交付清單，未宣稱已修改App Store公開隱私標籤。
+
+## AdMob 上架準備（2026-11-07）
+
+- App Store ID `6829168144`。台灣與美國公開商店的開發者網站均為 `https://rookielab.io/`。根目錄 `/app-ads.txt` 可讀，內容與 AdMob 提供的發布商記錄相符。
+- AdMob App ID `ca-app-pub-5287756452662687~1030829762`。
+- 首頁橫幅 `ca-app-pub-5287756452662687/5394414908`。
+- 復盤插頁 `ca-app-pub-5287756452662687/5947939516`。AdMob 單元頻率上限為每位使用者每天 3 次。
+- AdMob 重新檢查後仍顯示需要審核及放送量受限。TestFlight 1.1.0（202611071431）以基本發布配置封裝，未鏈結 Google Mobile Ads。官方測試廣告目前在本機 `project.admob-pilot.yml`。
+- 待發布版引擎與 SDK 授權相容性解決後，將上述 App ID 與版位 ID 設至發布目標。用官方測試版位或 AdMob 註冊的測試裝置實機驗證。依最後版 SDK 與同意流程調整 Apple App 隱私揭露及廣告年齡分級，再提交新版。
+
+雙平台正式版位及送審聲明草稿見 [AdMob 送審資料](../../docs/spec/mobile-ad-release.md)。

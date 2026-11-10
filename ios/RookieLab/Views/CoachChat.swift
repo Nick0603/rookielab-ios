@@ -52,7 +52,7 @@ struct CoachChatSheet: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 14) {
           HStack(alignment: .top, spacing: 10) {
-            Image("coach-point").resizable().scaledToFit().frame(width: 44, height: 44)
+            Image("accent-bishop").resizable().scaledToFit().accessibilityHidden(true).frame(width: 44, height: 44)
             Text("想問這一步什麼都可以。我只根據引擎的分析回答，不會自己亂猜棋步。").font(.subheadline).foregroundStyle(Brand.ink.opacity(0.8))
           }
           if turns.isEmpty {

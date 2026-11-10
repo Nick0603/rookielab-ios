@@ -4,7 +4,7 @@ import XCTest
 @MainActor
 final class OpeningCourseTests: XCTestCase {
   func testAllCoursesHaveBothRolesLegalLinesAndDifferentVariations() {
-    XCTAssertEqual(OpeningCourse.all.count, 6)
+    XCTAssertEqual(OpeningCourse.all.count, 20)
     for course in OpeningCourse.all {
       XCTAssertGreaterThanOrEqual(course.variants.count, 2)
       XCTAssertGreaterThan(course.maxTurn, 2)
@@ -16,7 +16,7 @@ final class OpeningCourseTests: XCTestCase {
       }
       let variations = Set(course.variants.map { $0.steps.map(\.uci).joined(separator: " ") })
       XCTAssertEqual(variations.count, course.variants.count)
-      XCTAssertTrue(course.stages.allSatisfy { course.minimumTurn($0) <= course.maxTurn })
+      XCTAssertTrue(course.stages.allSatisfy { course.minimumTurn($0) <= ($0.plies + 1) / 2 })
     }
     XCTAssertEqual(Set(OpeningCourse.all.map(\.side)), [.white, .black])
   }
@@ -64,7 +64,7 @@ final class OpeningCourseTests: XCTestCase {
     defer { UserDefaults.standard.set(previousSource, forKey: "gameSource") }
     let app = AppModel(restore: false)
     XCTAssertNil(app.account)
-    XCTAssertEqual(app.tab, .openings)
+    XCTAssertEqual(app.tab, .games)
     let pgn = "[White \"A\"]\n[Black \"B\"]\n[Result \"1-0\"]\n\n1. e4 e5 2. Nf3 Nc6 1-0"
     let game = ImportedGames.parse(pgn, side: .white)!
     XCTAssertEqual(game.opponent, "B")

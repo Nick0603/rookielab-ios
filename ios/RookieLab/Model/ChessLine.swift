@@ -110,7 +110,9 @@ struct ChessLine {
   /// 棋譜本文 → 每一步的 SAN，以及這步後面註解裡的時鐘（[%clk 0:02:51.5]，剩下幾秒）
   static func moveTokens(_ pgn: String) -> [(san: String, clock: Double?)] {
     // 拿掉標頭行
+    // 手打或從網頁複製的棋譜：智慧標點把 O-O 的連字號換成破折號
     let body = pgn.split(separator: "\n").filter { !$0.hasPrefix("[") }.joined(separator: " ")
+      .replacingOccurrences(of: "[\u{2010}-\u{2015}\u{2212}]", with: "-", options: .regularExpression)
     var out: [(san: String, clock: Double?)] = []
     var word = "", comment = ""
     var brace = 0, paren = 0
@@ -122,6 +124,8 @@ struct ChessLine {
       if t.isEmpty || t.hasPrefix("$") || ["1-0", "0-1", "1/2-1/2", "*"].contains(t) { return }
       // 去掉 !? 這類註記
       t = t.replacingOccurrences(of: "[!?]+$", with: "", options: .regularExpression)
+      // 入堡常被寫成 0-0／0-0-0
+      if t.hasPrefix("0-0") { t = t.replacingOccurrences(of: "0", with: "O") }
       if !t.isEmpty { out.append((t, nil)) }
     }
     for ch in body {

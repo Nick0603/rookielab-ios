@@ -24,7 +24,9 @@ enum GameSources {
   }
 
   private static func get(_ url: URL) async throws -> (Data, Int) {
+    try Task.checkCancellation()
     var req = URLRequest(url: url)
+    req.timeoutInterval = 10
     req.setValue("RookieLab-iOS/1.0 (+https://rookielab.io)", forHTTPHeaderField: "User-Agent")
     do {
       let (d, r) = try await URLSession.shared.data(for: req)

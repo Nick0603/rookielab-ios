@@ -69,9 +69,7 @@ struct AnalyzingView: View {
     VStack(spacing: 14) {
       Spacer(minLength: 8)
       HStack(spacing: 10) {
-        // 只讓上下浮動重複播：repeatForever 掛在整張圖上時，進度、說明換行造成的位置變化也會一直重播，貓會飄來飄去
-        Image("coach-think").resizable().scaledToFit().frame(width: line == nil ? 130 : 64, height: line == nil ? 130 : 64)
-          .phaseAnimator([false, true]) { v, up in v.offset(y: up ? -5 : 5) } animation: { _ in .easeInOut(duration: 0.9) }
+        Image("accent-bishop").resizable().scaledToFit().accessibilityHidden(true).frame(width: line == nil ? 72 : 40, height: line == nil ? 72 : 40)
         Text(status.contains("/") ? String(localized: "分析這局中") : status).font(.title3.bold()).foregroundStyle(Brand.ink).multilineTextAlignment(.center)
       }
       if let line {

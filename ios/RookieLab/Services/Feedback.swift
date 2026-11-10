@@ -120,7 +120,7 @@ enum AppLog {
   @MainActor static func add(_ kind: String, _ message: String) {
     entries.append(Entry(t: Date().timeIntervalSince1970 * 1000, k: String(kind.prefix(12)), m: String(message.prefix(300))))
     if entries.count > 60 { entries.removeFirst(entries.count - 60) }
-    Telemetry.breadcrumb("\(kind): \(message.prefix(120))")
+    Telemetry.breadcrumb(String(kind.prefix(12)))
   }
 }
 
@@ -187,7 +187,7 @@ struct FeedbackForm: View {
   }
 
   @ViewBuilder private var ask: some View {
-    Image("coach-think").resizable().scaledToFit().frame(width: 96, height: 96)
+    Image("accent-bishop").resizable().scaledToFit().accessibilityHidden(true).frame(width: 96, height: 96)
     Text("Rookie Lab 用起來如何？").font(.title3.bold()).foregroundStyle(Brand.ink)
     stars
     if score > 0 && !happy {
@@ -216,7 +216,7 @@ struct FeedbackForm: View {
   }
 
   @ViewBuilder private var thanks: some View {
-    Image(happy ? "coach-cheer" : "coach-happy").resizable().scaledToFit().frame(width: 110, height: 110)
+    Image("accent-rook").resizable().scaledToFit().accessibilityHidden(true).frame(width: 110, height: 110)
     Text("謝謝你！").font(.title2.bold()).foregroundStyle(Brand.ink)
     if happy {
       Text("喜歡的話，到 App Store 留個評價，讓更多想變強的棋友找到 Rookie Lab。").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)

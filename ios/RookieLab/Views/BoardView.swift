@@ -2,7 +2,17 @@ import AVFoundation
 import SwiftUI
 import UIKit
 
-struct Arrow: Hashable { let from: String; let to: String; let color: Color }
+struct Arrow: Hashable {
+  let from: String; let to: String; let color: Color
+  /// 細線（保護關係）
+  var thin = false
+}
+
+/// 格子標示：fill＝整格上色（沒保護被攻擊的子），ring＝圈起來（被保護的子）
+struct SquareMark: Hashable {
+  let square: String; let color: Color
+  var ring = false
+}
 
 /// 盤面上的一顆子。id 跨局面不變，換局面時同一顆子才會「滑過去」，不是消失再出現
 struct PlacedPiece: Identifiable, Equatable {
@@ -47,6 +57,7 @@ struct BoardView: View {
   var flipped = false
   var arrows: [Arrow] = []
   var highlight: [String] = []
+  var marks: [SquareMark] = []
   /// 提示要動的那顆子：一閃一閃的綠圈
   var pulse: String? = nil
   var badge: (square: String, cls: MoveClass)?
@@ -78,8 +89,13 @@ struct BoardView: View {
             .fill((f + r) % 2 == 0 ? Brand.lightSquare : Brand.darkSquare)
             .overlay(highlight.contains(sq) ? Color.yellow.opacity(0.35) : .clear)
             .overlay(selected == sq ? Color.yellow.opacity(0.45) : .clear)
+            .overlay(marks.first { $0.square == sq && !$0.ring }.map { $0.color.opacity(0.4) } ?? .clear)
             .frame(width: s, height: s)
             .offset(x: CGFloat(f) * s, y: CGFloat(r) * s)
+        }
+        ForEach(marks.filter(\.ring), id: \.self) { m in
+          Circle().stroke(m.color.opacity(0.85), lineWidth: s * 0.07).frame(width: s * 0.92, height: s * 0.92)
+            .position(point(m.square, s)).allowsHitTesting(false)
         }
         // 座標
         ForEach(0..<8, id: \.self) { k in
@@ -126,7 +142,7 @@ struct BoardView: View {
         }
         // 箭頭
         ForEach(arrows, id: \.self) { a in
-          ArrowShape(from: point(a.from, s), to: point(a.to, s), width: s * 0.16)
+          ArrowShape(from: point(a.from, s), to: point(a.to, s), width: s * (a.thin ? 0.08 : 0.16))
             .fill(a.color.opacity(0.85))
             .allowsHitTesting(false)
             .transition(.opacity)
@@ -385,6 +401,9 @@ enum Haptics {
   // 重複用同一個產生器（每次 new 一個會有延遲）
   @MainActor private static let selection = UISelectionFeedbackGenerator()
   @MainActor private static let impact = UIImpactFeedbackGenerator(style: .medium)
+  @MainActor private static let notification = UINotificationFeedbackGenerator()
+  @MainActor static func success() { notification.notificationOccurred(.success); notification.prepare() }
+  @MainActor static func error() { notification.notificationOccurred(.error); notification.prepare() }
   @MainActor static func tick() { selection.selectionChanged(); selection.prepare() }
   @MainActor static func bump() { impact.impactOccurred(); impact.prepare() }
 }

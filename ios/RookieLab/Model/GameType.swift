@@ -105,7 +105,12 @@ enum Openings {
     if AppLang.isZh, let hit = shortestFirst.first(where: { k.contains($0.0) }) {
       return String(hit.1.components(separatedBy: " — ").first ?? hit.1)
     }
-    // 沒有譯名：保留原名，去掉後面附的走法（"... 2.Nf3"）與 Variation 之後的細節
+    // 沒有譯名：取到第一個 Opening／Defense／Game／Gambit／Attack／System 為止（"Sicilian Defense: Najdorf" → "Sicilian Defense"）
+    let all = raw.split(separator: " ").map { $0.trimmingCharacters(in: CharacterSet(charactersIn: ":,")) }
+    if let end = all.firstIndex(where: { ["Opening", "Defense", "Defence", "Game", "Gambit", "Attack", "System"].contains($0) }) {
+      return all[...end].joined(separator: " ").replacingOccurrences(of: "Van t ", with: "Van't ")
+    }
+    // 其他：保留原名，去掉後面附的走法（"... 2.Nf3"）與 Variation 之後的細節
     let words = raw.split(separator: " ").prefix { !($0.first?.isNumber ?? false) && $0 != "Variation" }
     return words.prefix(4).joined(separator: " ").replacingOccurrences(of: "Van t ", with: "Van't ")
   }

@@ -6,6 +6,20 @@ import SwiftUI
 /// 評級規則與網站相同（Grading）。分析是一步一步填進來的，畫面不用等全部算完。
 @MainActor @Observable
 final class ReviewModel {
+  let analysisDay = Date()
+  private(set) var remote = RemoteAnalysisClient.enabled
+  var analysisCacheID: String { remote ? RemoteAnalysisClient.cacheID(game) : game.id }
+  private(set) var analysisError: String?
+  private(set) var remoteSeconds: Double?
+  private(set) var refinementSeconds: Double?
+  private(set) var cacheHit = false
+  private(set) var partialReview = false
+  func retryAnalysis(locally: Bool = false) {
+    if locally { UserDefaults.standard.set(false, forKey: "remoteAnalysis.enabled"); remote = false; remoteSeconds = nil }
+    Telemetry.log("analysis_click", ["source": "retry", "cache_hit": false])
+    analyzeTask?.cancel(); analyzeTask = nil; analysisError = nil
+    start()
+  }
   let game: GameSummary
   let line: ChessLine?
   private(set) var records: [MoveRecord?]
@@ -92,7 +106,7 @@ final class ReviewModel {
     let t = ChessLine.thinkTimes(pgn: game.pgn, timeControl: game.timeControl)
     let c = ChessLine.moveTokens(game.pgn).map(\.clock)
     var a: AnalyzedGame?
-    if let line, let raw = AnalysisStore.load(game.id), raw.evals.count == n + 1 { a = AnalysisStore.regraded(raw, line: line) }
+    if let line, let raw = AnalysisStore.load(RemoteAnalysisClient.enabled ? RemoteAnalysisClient.cacheID(game) : game.id), raw.evals.count == n + 1 { a = AnalysisStore.regraded(raw, line: line) }
     return Prepared(line: line, thinkTimes: t.count == n ? t : Array(repeating: nil, count: n),
                     clockLeft: c.count == n ? c : Array(repeating: nil, count: n), analysis: a)
   }
@@ -111,6 +125,7 @@ final class ReviewModel {
     evals = Array(repeating: nil, count: n + 1)
     current = min(startAt, n)
     if let a = p.analysis {
+      cacheHit = true
       evals = a.evals
       records = a.records
       progress = 1
@@ -124,11 +139,31 @@ final class ReviewModel {
     guard analyzeTask == nil, let line, !status.isEmpty else { return }
     analyzeTask = Task { [weak self] in
       guard let self else { return }
+      AnalysisActivity.shared.begin()
+      defer { AnalysisActivity.shared.end() }
+      let totalBegan = ProcessInfo.processInfo.systemUptime
+      var completed = false
+      defer {
+        if Task.isCancelled && !completed { Telemetry.log("analysis_cancelled") }
+      }
+      let useRemote = self.remote && RemoteAnalysisClient.enabled
+      Telemetry.log("analysis_start", ["provider": useRemote ? "remote_hybrid" : "local", "plies": line.plies.count])
+      var firstPass: [[EngineLine]?]?
       do {
+        if useRemote {
+          self.status = "遠端復盤中…"
+          let remoteBegan = Date()
+          firstPass = try await RemoteAnalysisClient.firstPass(line)
+          self.remoteSeconds = Date().timeIntervalSince(remoteBegan)
+          self.status = "手機精算中…"
+        }
         if !StockfishService.netsReady { self.status = String(localized: "第一次使用：下載引擎評估檔（約 80MB）…") }
         try await StockfishService.shared.start()
       } catch {
-        self.status = String(localized: "引擎啟動失敗，請檢查網路後重試")
+        guard !Task.isCancelled else { return }
+        Telemetry.log("analysis_failed", ["error_code": (error as NSError).code, "provider": useRemote ? "remote_hybrid" : "local"])
+        self.analysisError = error.localizedDescription
+        self.status = error.localizedDescription
         return
       }
       let n = line.plies.count
@@ -136,32 +171,57 @@ final class ReviewModel {
       self.following = false
       let began = Date()
       self.analyzed = 0
-      _ = await AnalysisStore.analyze(self.game, line: line, priority: .interactive) { [weak self] k, e, r in
-        guard let self else { return }
+      let update: @MainActor (Int, [[EngineLine]?], [MoveRecord?]) -> Void = { [weak self] k, e, r in
+        guard let self, !Task.isCancelled else { return }
         self.evals = e
         self.records = r
         self.progress = Double(k) / Double(max(n, 1))
-        self.status = k < n ? String(localized: "分析中 \(k)/\(n)") : ""
-        // 跟著播用固定節奏（followPacer），不跟分析的速度：分析快的地方不會一下跳好幾步、精算時也不會停住
+        self.status = useRemote ? "手機精算中…" : String(localized: "分析中 \(k)/\(n)")
         self.analyzed = max(self.analyzed, k)
       }
-      self.status = ""
-      Telemetry.log("game_analyzed", ["plies": n, "seconds": Int(Date().timeIntervalSince(began).rounded()), "platform": self.game.platform.rawValue])
+      let result: AnalyzedGame?
+      if useRemote {
+        result = await AnalysisStore.analyze(self.game, line: line, priority: .interactive,
+          firstPass: firstPass, cacheID: self.analysisCacheID, onStep: update)
+      } else {
+        result = await AnalysisStore.quickReview(self.game, line: line, side: self.me, startedAt: totalBegan, onStep: update)
+      }
+      guard !Task.isCancelled else { return }
+      guard let result, result.evals.contains(where: { $0?.isEmpty == false }) else {
+        Telemetry.log("analysis_failed", ["provider": useRemote ? "remote_hybrid" : "local", "reason": "incomplete"])
+        self.analysisError = "復盤未完成，請重試"
+        self.status = self.analysisError ?? ""
+        return
+      }
+      self.evals = result.evals
+      self.records = result.records
+      self.partialReview = !result.complete
+      self.refinementSeconds = Date().timeIntervalSince(began)
+      if result.complete {
+        Telemetry.log("game_analyzed", ["plies": n, "seconds": Int(Date().timeIntervalSince(began).rounded()), "platform": self.game.platform.rawValue])
+      }
       if self.following {
         self.following = false
         self.pacer?.cancel()
         self.current = 0
       }
-      // 剛分析完：記一筆、失誤加進複習、跳出「這局最該記住的一件事」
-      if let a = AnalysisStore.load(self.game.id), let d = GameDigest(game: self.game, line: line, analysis: a) {
-        await d.prefetchExplanations()
-        self.added = AutoAnalyzer.shared.record(d)
-        self.lesson = Lesson(d)
-        // 分析完直接停在「一件事」那一步，不跳回開頭
-        if let l = self.lesson { self.current = l.ply + 1 }
-        Notifier.reschedule()
+      self.status = ""
+      completed = true
+      Telemetry.log(result.complete ? "analysis_complete" : "analysis_partial",
+                    ["provider": useRemote ? "remote_hybrid" : "local", "plies": n,
+                     "duration_ms": Int((ProcessInfo.processInfo.systemUptime - totalBegan) * 1000)])
+      if result.complete {
+        Task(priority: .utility) { [weak self] in
+          guard let self else { return }
+          if let digest = GameDigest(game: self.game, line: line, analysis: result) {
+            await digest.prefetchExplanations()
+            self.added = AutoAnalyzer.shared.record(digest)
+            self.lesson = Lesson(digest)
+            Notifier.reschedule()
+          }
+          await NewGameMonitor.shared.reconcile()
+        }
       }
-      self.prewarm()
     }
   }
 

@@ -1,0 +1,13 @@
+# AdMob 已併入 project.yml（D-77）。這個檔只保留測試用的 App ID 與測試環境變數，給本機實驗用。
+# xcodegen generate --spec project.admob-pilot.yml
+include: [project.yml]
+targets:
+  RookieLab:
+    info:
+      properties:
+        GADApplicationIdentifier: ca-app-pub-3940256099942544~1458002511
+schemes:
+  RookieLab:
+    test:
+      environmentVariables:
+        ROOKIELAB_ADMOB_PILOT: "1"

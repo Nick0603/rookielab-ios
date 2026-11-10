@@ -310,6 +310,7 @@ struct AnalysisBoardView: View {
     }
     .background(Brand.paper)
     .toolbar(returnLabel == nil ? .automatic : .hidden, for: .tabBar)
+    .trackedScreen("analysis_board")
     .navigationTitle(returnLabel == nil ? String(localized: "分析") : String(localized: "深入分析")).navigationBarTitleDisplayMode(.inline)
     .navigationBarBackButtonHidden(returnLabel != nil)
     .toolbar {

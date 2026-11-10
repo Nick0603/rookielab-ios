@@ -5,7 +5,7 @@ import Observation
 /// Siri／捷徑、小工具點進來要做的事：App 打開後由 RootView 接手
 @MainActor @Observable
 final class Router {
-  enum Action: Equatable { case practice, latestGame }
+  enum Action: Equatable { case practice, latestGame, newGames }
   static let shared = Router()
   var pending: Action?
 }

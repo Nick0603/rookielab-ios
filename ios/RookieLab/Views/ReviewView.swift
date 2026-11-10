@@ -1,3 +1,4 @@
+import ChessKit
 import SwiftUI
 
 /// 單局復盤：一屏放得下（統計列 → 棋盤＋勝率條 → 棋譜條 → 這一步 → 播放控制 → 圖示列），次要資訊用面板彈出。
@@ -6,6 +7,9 @@ import SwiftUI
 struct ReviewView: View {
   let game: GameSummary
   var startAt = 0
+  var archivedOnly = false
+  @State private var unavailableArchive = false
+  @State private var needsUpdate = false
   @State private var model: ReviewModel?
   /// 載入時小棋盤播的棋局（只解析棋譜，很快）
   @State private var previewLine: ChessLine?
@@ -14,7 +18,11 @@ struct ReviewView: View {
 
   var body: some View {
     ZStack {
-      if let model {
+      if needsUpdate {
+        RequiredAppUpdateView()
+      } else if unavailableArchive {
+        ContentUnavailableView("無法載入過往分析", systemImage: "doc.text.magnifyingglass")
+      } else if let model {
         ReviewContent(model: model).transition(.opacity)
       } else {
         // 已經分析過的局也會等一下（讀存檔、備好解說）：一樣快速播這局、出小知識，進度條照解說準備的進度走
@@ -24,12 +32,30 @@ struct ReviewView: View {
           .navigationBarTitleDisplayMode(.inline)
       }
     }
+    .overlay(alignment: .bottom) {
+      if let m = model, let error = m.analysisError {
+        VStack {
+          Text(error).font(.footnote)
+          Button("重試") { m.retryAnalysis() }
+          Button("改用手機復盤") { m.retryAnalysis(locally: true) }
+        }.padding().background(.regularMaterial).padding()
+      }
+    }
     .animation(.easeOut(duration: 0.25), value: model == nil)
+    .trackedScreen("review")
+    .onAppear { AnalysisActivity.shared.enterReview() }
+    .onDisappear { AnalysisActivity.shared.leaveReview() }
     .task {
       guard model == nil else { return }
       let g = game
-      if previewLine == nil { previewLine = await Task.detached(priority: .userInitiated) { ChessLine(pgn: g.pgn) }.value }
       let prepared = await Task.detached(priority: .userInitiated) { ReviewModel.prepare(g) }.value
+      if previewLine == nil { previewLine = prepared.line }
+      guard !Task.isCancelled else { return }
+      if prepared.analysis == nil, archivedOnly { unavailableArchive = true; return }
+      if prepared.analysis == nil, AppUpdateService.shared.decision == .required { needsUpdate = true; return }
+      Telemetry.log("analysis_click", ["cache_hit": prepared.analysis != nil, "source": "review_entry"])
+      if prepared.analysis != nil { Telemetry.log("analysis_cache_hit") }
+      guard !Task.isCancelled else { return }
       let m = ReviewModel(game: g, prepared: prepared, startAt: startAt)
       if m.status.isEmpty {
         warming = m
@@ -55,7 +81,10 @@ struct ReviewContent: View {
   /// 重點復盤（Duolingo 式）：一個一個重點，自己找更好的一步
   /// 快速復盤（Duolingo 式）：就在這個棋盤上快速自動播，停在重點讓你找
   @State private var quick: QuickReview?
+  @State private var theory: [Int: String] = [:]
+  @State private var openingStudy: Ply?
   @State private var preparing = false
+  @State private var automaticReviewStarted = false
   /// 從開始分析到快速復盤開始播，載入畫面一直蓋著（中間不閃）
   @State private var loading = false
 
@@ -84,15 +113,25 @@ struct ReviewContent: View {
     VStack(spacing: 0) {
       // 載入中只畫載入畫面：底下的復盤不畫（分析每一步都會讓它整個重畫，拖慢動畫）
       if isLoading { loadingView } else {
+      if model.remote {
+        Text(model.cacheHit ? "遠端混合復盤 · 已儲存結果" : String(format: "遠端初評 %.1f 秒 · 手機精算 %.1f 秒", model.remoteSeconds ?? 0, model.refinementSeconds ?? 0))
+          .font(.caption2).foregroundStyle(.secondary).padding(.vertical, 3)
+      }
+      if model.partialReview {
+        Text("已顯示部分復盤結果")
+          .font(.caption2).foregroundStyle(.secondary).padding(.vertical, 3)
+      }
       playerBar(flipped ? .white : .black)
       HStack(spacing: 6) {
         EvalBar(white: quick?.whiteWin ?? model.whiteWin, flipped: flipped)
-        BoardView(fen: fen, flipped: flipped, arrows: arrows, highlight: lastSquares, pulse: quick?.pulse, badge: badge,
+        BoardView(fen: fen, flipped: flipped, arrows: arrows, highlight: lastSquares, marks: quick?.marks ?? [], pulse: quick?.pulse, badge: badge,
                   legalTargets: quick.map { q in q.canMove ? { sq in quickTargets(q, sq) } : nil } ?? (model.mode == .free ? { model.freeTargets($0) } : canExplore ? { FEN.targets(fen: fen, from: $0) } : nil),
                   onMove: quick.map { q in q.canMove ? { q.tryMove($0, $1) } : nil } ?? (model.mode == .free ? { from, to in
                     if FEN.pieces(fen)[from]?.last == "P", to.hasSuffix("8") || to.hasSuffix("1") { promo = (from, to) } else { model.freeMove(from, to) }
                   } : canExplore ? { exploreWith($0, $1) } : nil),
                   onSwipe: canExplore ? { step($0) } : nil)
+          .accessibilityElement(children: .contain)
+          .accessibilityIdentifier("single-game-review-board")
           .gesture(model.mode == .free || quick != nil || canExplore ? nil : swipe)
           .overlay {
             if (quick?.resigned ?? false) || (quick == nil && model.game.opponentResigned && model.current == model.count && model.count > 0 && model.variation == nil) {
@@ -122,8 +161,8 @@ struct ReviewContent: View {
     }
     .safeAreaInset(edge: .bottom, spacing: 0) { if !isLoading { if let q = quick { quickBar(q) } else { bottomBar } } }
     .animation(.easeOut(duration: 0.3), value: isLoading)
-    // 剛分析完：直接開始快速復盤
-    .onChange(of: model.status.isEmpty) { was, now in if now && !was { openLesson() } }
+    // 新分析與快取重開共用入口；同頁返回不重新播放。
+    .onChange(of: model.status.isEmpty) { was, now in if now && !was { startAutomaticReview() } }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     .background(Brand.paper)
     .toolbar(.hidden, for: .tabBar)
@@ -140,6 +179,7 @@ struct ReviewContent: View {
                         returnLabel: model.current == 0 ? String(localized: "回到復盤") : String(localized: "回到復盤・第 \((model.current + 1) / 2) 手"))
     }
     .onAppear {
+      startAutomaticReview()
       model.start()
       AppLog.add("open", "review \(model.game.platform.rawValue) \(model.count) plies") }
     .onChange(of: model.mode) { _, m in model.stopFollowing(); if m == .free { model.refreshFreeLines() } }
@@ -199,6 +239,14 @@ struct ReviewContent: View {
 
     .sheet(isPresented: Binding(get: { coachFacts != nil }, set: { if !$0 { coachFacts = nil } })) {
       if let f = coachFacts { CoachChatSheet(facts: f).presentationDetents([.medium, .large]) }
+    }
+    .sheet(isPresented: Binding(get: { openingStudy != nil }, set: { if !$0 { openingStudy = nil } })) {
+      if let ply = openingStudy, let line = model.line {
+        NavigationStack {
+          OpeningAnalysisView(line: Array(line.plies.prefix(ply.index + 1)), side: model.me, account: OpeningRoute.learner)
+            .toolbar { Button("完成") { openingStudy = nil } }
+        }
+      }
     }
     .sheet(isPresented: $paywall) { PaywallView(from: "coach") }
     .sheet(item: $sheet) { s in
@@ -334,9 +382,12 @@ struct ReviewContent: View {
     let items = [MoveWheel.Item(id: 0, number: nil, san: String(localized: "開始"))] + plies.map { p in
       let t = model.thinkTimes[safe: p.index] ?? nil
       let r = model.records[safe: p.index] ?? nil
+      let time = t.map { $0 < 10 ? String(format: "%.1fs", $0) : "\(Int($0.rounded()))s" }
+      let label = theory[p.index].map { _ in String(localized: "開局理論") }
+      let detail = [label, time].compactMap { $0 }.joined(separator: " · ")
       return MoveWheel.Item(id: p.index + 1, number: p.mover == .white ? "\(p.moveNumber)." : nil, san: p.san,
                             badge: r.flatMap { $0.cls != .good && $0.cls != .excellent ? $0.cls : nil },
-                            sub: t.map { $0 < 10 ? String(format: "%.1fs", $0) : "\(Int($0.rounded()))s" }, subHighlight: (t ?? 0) >= 30)
+                            sub: detail.isEmpty ? nil : detail, subHighlight: (t ?? 0) >= 30)
     }
     return MoveWheel(items: items, selection: Binding(get: { model.current }, set: { model.go($0) }))
   }
@@ -423,6 +474,14 @@ struct ReviewContent: View {
   @ViewBuilder private var coachPanel: some View {
     if let q = quick {
       QuickPanel(q: q) { ply in endQuick(); model.mode = .step; model.go(ply + 1) }
+      if q.phase == .praise, let ply = q.active?.ply, theory[ply.index] != nil,
+         model.line?.startFen == Position.standard.fen {
+        Button { openingStudy = ply } label: { Label("探索這個開局", systemImage: "book") }
+          .buttonStyle(.bordered)
+      }
+      if q.phase == .done {
+        accuracySummary
+      }
     } else { reviewPanel }
   }
 
@@ -531,10 +590,7 @@ struct ReviewContent: View {
   /// 對局總覽（chess.com Game Review 的第一頁）：雙方準確率、各評級的步數，選要怎麼看
   @ViewBuilder private var summaryPanel: some View {
     let opp: Side = model.me == .white ? .black : .white
-    HStack(spacing: 0) {
-      accuracyBlock(String(localized: "你"), model.accuracy(of: model.me), Brand.orange)
-      accuracyBlock(model.game.opponent, model.accuracy(of: opp), Brand.ink)
-    }
+    accuracySummary
     let mine = Dictionary(uniqueKeysWithValues: model.counts(of: model.me))
     let theirs = Dictionary(uniqueKeysWithValues: model.counts(of: opp))
     VStack(spacing: 6) {
@@ -552,7 +608,7 @@ struct ReviewContent: View {
     .background(Brand.cream, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     FeedbackPromptCard(trigger: "review_done", task: "review")
     VStack(spacing: 8) {
-      Button { start(.quick) } label: {
+      Button { openLesson() } label: {
         Label("看重點（\(model.myMistakes.count) 個你的失誤）", systemImage: "forward.fill").font(.headline).frame(maxWidth: .infinity, minHeight: 46)
       }
       .buttonStyle(.borderedProminent).tint(Brand.orange)
@@ -560,6 +616,14 @@ struct ReviewContent: View {
         Button { start(.step) } label: { Text("逐步看").frame(maxWidth: .infinity, minHeight: 40) }.buttonStyle(.bordered).tint(Brand.ink)
         Button { model.mode = .free; step(1) } label: { Text("自由分析").frame(maxWidth: .infinity, minHeight: 40) }.buttonStyle(.bordered).tint(Brand.ink)
       }
+    }
+  }
+
+  private var accuracySummary: some View {
+    let opp: Side = model.me == .white ? .black : .white
+    return HStack(spacing: 0) {
+      accuracyBlock(String(localized: "你"), model.accuracy(of: model.me), Brand.orange)
+      accuracyBlock(model.game.opponent, model.accuracy(of: opp), Brand.ink)
     }
   }
 
@@ -706,6 +770,12 @@ struct ReviewContent: View {
     return model.mode == .quick ? String(localized: "下一個重點") : String(localized: "播放")
   }
 
+  private func startAutomaticReview() {
+    guard !automaticReviewStarted, model.status.isEmpty else { return }
+    automaticReviewStarted = true
+    openLesson()
+  }
+
   /// 開始快速復盤：先把所有要用的東西備好（重點、每一步的名稱與解說、答案），再從頭快速播。
   /// 準備中還是載入畫面；一次算一小段就讓出主執行緒，動畫不會停
   private func openLesson() {
@@ -714,29 +784,62 @@ struct ReviewContent: View {
     model.stopFollowing()
     model.playing = false
     Task {
-      await model.warmExplanations()
-      let items = GameHighlight.build(model)
+      theory = await Task.detached(priority: .userInitiated) {
+        let book = OpeningBook.shared
+        var hits: [Int: String] = [:]
+        for ply in line.plies {
+          if let match = book.position(ply.fenAfter) { hits[ply.index] = match.name }
+        }
+        return hits
+      }.value
+      // 對手每一步的威脅（判斷「你守住了」）與停點的攻守，在解說執行緒上一次算好
+      let boards = await ExplainJS.boards(line.plies.filter { $0.mover != model.me })
+      let defended = Self.defended(model, boards: boards)
+      let plan = GameHighlight.plan(model, theory: theory, opening: Self.openingStop(model.game, theory: theory, observation: await ExplainJS.openingObservation(line, me: model.me)), defended: defended)
+      let stopPlies = Set(plan.notices.keys).union(plan.highlights.map(\.id)).union(plan.highlights.map { $0.id - 1 })
+      var relations = boards
+      for (k, v) in await ExplainJS.boards(line.plies.filter { stopPlies.contains($0.index) && boards[$0.index] == nil }) { relations[k] = v }
+      let items = plan.highlights
+      let explanations = Dictionary(uniqueKeysWithValues: items.map { ($0.ply.index, $0.explanation) })
       var tags: [String] = []
       for p in line.plies {
-        let r = model.records[safe: p.index] ?? nil
-        // 關鍵步、走差的步用網站解說的標題（戰術名稱）
-        let e = r.flatMap { $0.cls.isKey || $0.cls == .inaccuracy ? model.explanation(p.index) : nil }
-        tags.append(MoveTags.tag(p, explanation: e))
+        tags.append(MoveTags.tag(p, explanation: explanations[p.index] ?? nil))
         if p.index % 4 == 3 { await Task.yield() }
       }
-      // 進度條走到底再換畫面
-      try? await Task.sleep(nanoseconds: 250_000_000)
-      preparing = false
-      loading = false
-      guard !items.isEmpty else { start(.quick); return }
       Self.markReviewed(model.game.id)
-    Telemetry.log("quick_review_start", ["plies": line.plies.count])
-    reviewed = true
-    let q = QuickReview(line: line, highlights: items, me: model.me, records: model.records, evals: model.evals, whiteWins: model.whiteWins, tags: tags,
-                        resigned: model.game.opponentResigned)
+      Telemetry.log("quick_review_start", ["plies": line.plies.count, "highlights": items.count])
+      reviewed = true
+      let q = QuickReview(line: line, highlights: items, notices: plan.notices, skipped: plan.skipped, relations: relations, me: model.me, records: model.records, evals: model.evals, whiteWins: model.whiteWins, tags: tags,
+                          resigned: model.game.opponentResigned)
       quick = q
       q.start()
+      preparing = false
+      loading = false
     }
+  }
+
+  /// 對手剛做出真正的威脅（下一步白吃子或將殺），你下一步走了好棋：算你守住了（ply → 對手那步 SAN）
+  static func defended(_ m: ReviewModel, boards: [Int: BoardRelations]) -> [Int: String] {
+    guard let line = m.line else { return [:] }
+    var out: [Int: String] = [:]
+    for (k, r) in boards where r.realThreat != nil {
+      guard let reply = m.records[safe: k + 1] ?? nil, reply.mover == m.me, [.best, .excellent, .great].contains(reply.cls) else { continue }
+      out[k + 1] = line.plies[k].san
+    }
+    return out
+  }
+
+  /// 開局停點的文字：開局名稱、理論走到第幾手、這個開局的最近戰績（匯入的棋譜沒有帳號就不列戰績）
+  static func openingStop(_ game: GameSummary, theory: [Int: String], history: [GameSummary]? = nil, observation: String? = nil) -> (title: String, detail: String?)? {
+    let lastBook = theory.keys.max()
+    guard let raw = game.openingRaw ?? lastBook.flatMap({ theory[$0] }) else { return nil }
+    var lines: [String] = []
+    if let lastBook { lines.append(String(localized: "到第 \(lastBook / 2 + 1) 手都是已收錄的理論走法。")) }
+    if let games = history ?? OpeningRecord.history(for: game) {
+      lines.append(OpeningRecord.compute(for: game, raw: raw, in: games).summary)
+    }
+    if let observation { lines.append(observation) }
+    return (String(localized: "開局：\(Openings.name(raw))"), lines.isEmpty ? nil : lines.joined(separator: "\n"))
   }
 
   /// 逐步復盤停在錯失良機（或失誤）：在同一個棋盤上重走這一步，走完回到這一手之後
@@ -763,7 +866,7 @@ struct ReviewContent: View {
 
   /// 分析中、準備解說中的整頁載入畫面：進度條一路走——分析佔 90%，準備解說佔最後 10%
   private var loadingView: some View {
-    AnalyzingView(progress: preparing ? 0.9 + 0.1 * model.prepProgress : (model.status.isEmpty ? 0.9 : model.progress * 0.9),
+    AnalyzingView(progress: model.status == "遠端復盤中…" ? nil : preparing ? 0.9 + 0.1 * model.prepProgress : (model.status.isEmpty ? 0.9 : model.progress * 0.9),
                   status: preparing ? String(localized: "準備每一步的解說") : model.status, plies: model.count,
                   line: model.line, flipped: model.me == .black)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -774,6 +877,9 @@ struct ReviewContent: View {
   private func quickStrip(_ q: QuickReview) -> some View {
     HStack(spacing: 10) {
       Text(q.pos == 0 ? String(localized: "開始") : String(localized: "第 \((q.pos + 1) / 2) 手")).font(.caption.monospacedDigit().weight(.semibold)).foregroundStyle(Brand.ink)
+      if q.phase == .playing || q.phase == .praise || q.phase == .done, theory[q.pos - 1] != nil {
+        Label("開局理論", systemImage: "book").font(.caption).foregroundStyle(Brand.teal)
+      }
       ProgressView(value: Double(q.pos), total: Double(max(q.line.plies.count, 1))).tint(Brand.orange)
     }
     .padding(.horizontal, 14).frame(height: 30)
@@ -785,6 +891,11 @@ struct ReviewContent: View {
       Button { endQuick() } label: { barIcon("xmark", String(localized: "結束快速復盤")) }.buttonStyle(.plain)
       Group {
         switch q.phase {
+        case .preview:
+          HStack(spacing: 8) {
+            quickButton(String(localized: "繼續"), prominent: false) { q.skipStudy() }
+            quickButton(String(localized: "重走這一步"), prominent: true) { q.beginStudy() }
+          }
         case .trying:
           HStack(spacing: 8) {
             if !q.hint { quickButton(String(localized: "提示"), prominent: false) { q.hint = true; Haptics.tick() } }
@@ -792,7 +903,7 @@ struct ReviewContent: View {
           }
         case .playing:
           quickButton(String(localized: "跳到下一個重點"), prominent: true) { q.skipAhead() }
-            .disabled(!q.highlights.contains { $0.interactive && $0.record.ply >= q.pos })
+            .disabled(!q.highlights.contains { $0.record.ply >= q.pos })
         case .praise:
           quickButton(String(localized: "繼續"), prominent: true) { q.continuePraise() }
         case .solved, .revealed:
@@ -806,6 +917,8 @@ struct ReviewContent: View {
     .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 4)
     .background(.bar)
     .overlay(alignment: .top) { Divider() }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("guided-quick-review")
   }
 
   private func quickButton(_ text: String, prominent: Bool, _ action: @escaping () -> Void) -> some View {
@@ -822,7 +935,7 @@ struct ReviewContent: View {
     Haptics.bump()
     if model.compare != nil { model.closeCompare(); return }
     if model.variation != nil { model.playing ? (model.playing = false) : model.playVariation(); return }
-    // 總覽頁：跟 chess.com 一樣按一下就從第一個重點開始
+    // 總覽頁：按一下從第一手開始快速復盤
     if model.current == 0 && model.status.isEmpty && !model.playing && model.mode != .free { openLesson(); return }
     if model.mode == .free { step(1); return }
     model.togglePlay()

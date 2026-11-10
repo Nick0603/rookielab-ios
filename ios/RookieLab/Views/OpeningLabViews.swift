@@ -403,9 +403,35 @@ struct OpeningAccountView: View {
   @Environment(\.dismiss) private var dismiss
   @State private var platform = Platform.chesscom
   @State private var username = ""
+  @State private var connector = AccountConnector()
   @FocusState private var focused: Bool
   var body: some View {
-    AccountForm(platform: $platform, username: $username, focused: $focused) { account in app.use(account); dismiss() }
-      .padding().navigationTitle("新增帳號")
+    ScrollView {
+      VStack(alignment: .leading, spacing: 24) {
+        Text("1 選平台 · 2 輸入名稱 · 3 選棋局").font(.subheadline).foregroundStyle(.secondary)
+        Text("使用 Chess.com 或 Lichess 的公開使用者名稱，不需要密碼。")
+        AccountForm(platform: $platform, username: $username, focused: $focused) { account in
+          focused = false
+          Task { if await connector.connect(account, to: app) { app.tab = .games; dismiss() } }
+        }.disabled(connector.busy)
+        if connector.busy { ProgressView("確認帳號並載入對局…") }
+        if let error = connector.error { Text(error).foregroundStyle(.red).accessibilityIdentifier("account-connection-error") }
+        let recent = AccountHistory.recent(app.accounts)
+        if !recent.isEmpty {
+          Text("最近使用").font(.headline)
+          ForEach(recent) { a in
+            HStack {
+              Button("\(a.platform.name) · \(a.username)") {
+                Task { if await connector.connect(a, to: app) { app.tab = .games; dismiss() } }
+              }.disabled(connector.busy)
+              Spacer()
+              Button(role: .destructive) { app.remove(a) } label: { Image(systemName: "xmark.circle").frame(minWidth: 44, minHeight: 44) }
+                .accessibilityLabel("移除 \(a.username)")
+            }
+          }
+        }
+      }.padding(24)
+    }.trackedScreen("account_connect").navigationTitle("輸入棋站帳號").navigationBarTitleDisplayMode(.inline)
+      .onDisappear { connector.cancel() }
   }
 }

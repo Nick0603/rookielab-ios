@@ -3,10 +3,10 @@ import SwiftUI
 /// 重點復盤的一個重點（照 Duolingo Chess 的 Game Review 分三類：好棋、錯失的機會、失誤）
 struct GameHighlight: Identifiable {
   enum Kind {
-    case good, missed, mistake
-    var zh: String { self == .good ? String(localized: "好棋") : self == .missed ? String(localized: "錯失的機會") : String(localized: "失誤") }
-    var icon: String { self == .good ? "trophy.fill" : self == .missed ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill" }
-    var color: Color { self == .good ? Color(hex: 0x1BACA6) : self == .missed ? Brand.orange : Color(hex: 0xD64545) }
+    case good, missed, mistake, study
+    var zh: String { if self == .study { return String(localized: "學習停點") }; return self == .good ? String(localized: "好棋") : self == .missed ? String(localized: "錯失的機會") : String(localized: "失誤") }
+    var icon: String { if self == .study { return "lightbulb" }; return self == .good ? "trophy.fill" : self == .missed ? "exclamationmark.triangle.fill" : "exclamationmark.circle.fill" }
+    var color: Color { if self == .study { return Brand.teal }; return self == .good ? Color(hex: 0x1BACA6) : self == .missed ? Brand.orange : Color(hex: 0xD64545) }
   }
   /// 最佳線的一步（要你走的、對手接的）
   struct Step { let uci: String; let san: String; let mine: Bool; let caption: String }
@@ -24,12 +24,36 @@ struct GameHighlight: Identifiable {
   var reason: String?
   var praise: String?
   var hint = ""
+  var studyTitle: String?
+  var studyDetail: String?
   var id: Int { record.ply }
   var interactive: Bool { kind != .good && !steps.isEmpty }
   var bestSan: String { steps.first?.san ?? record.bestSan ?? "" }
 
   /// 每局最多幾個重點（Duolingo 一局三個；這裡錯失的機會最多 3、失誤 2、好棋 2，照棋局順序）
-  @MainActor static func build(_ m: ReviewModel) -> [GameHighlight] {
+  /// opening：開局停點的標題與說明（名稱、使用者這個開局的戰績）。有它就固定加一個開局停點，取代「這局的開局理論」備用停點
+  @MainActor static func build(_ m: ReviewModel, theory: [Int: String] = [:], opening: (title: String, detail: String?)? = nil) -> [GameHighlight] {
+    var highlights = picks(m, theory: theory, theoryStop: opening == nil)
+    if let opening, let ply = openingPly(m, theory: theory, taken: Set(highlights.map(\.id))),
+       let r = m.records[safe: ply] ?? nil, var h = make(m, r, kind: .study, practice: false) {
+      h.studyTitle = opening.title
+      h.studyDetail = opening.detail
+      highlights.append(h)
+    }
+    return highlights.sorted { $0.id < $1.id }
+  }
+
+  /// 開局停點停在哪一手：最後一步理論走法；沒有理論資料就停在第 4 手黑方走完。避開已有的重點與自己的壞棋
+  @MainActor static func openingPly(_ m: ReviewModel, theory: [Int: String], taken: Set<Int>) -> Int? {
+    guard let line = m.line, !line.plies.isEmpty else { return nil }
+    let target = min(theory.keys.max() ?? 7, line.plies.count - 1)
+    for ply in stride(from: target, through: 0, by: -1) where !taken.contains(ply) {
+      if let r = m.records[safe: ply] ?? nil, !r.cls.isBad { return ply }
+    }
+    return nil
+  }
+
+  @MainActor private static func picks(_ m: ReviewModel, theory: [Int: String], theoryStop: Bool) -> [GameHighlight] {
     guard let line = m.line else { return [] }
     let mine = m.records.compactMap { $0 }.filter { $0.mover == m.me }
     func drop(_ r: MoveRecord) -> Double { r.winBefore - r.winAfter }
@@ -48,9 +72,47 @@ struct GameHighlight: Identifiable {
     let picked = Array(missed.sorted { drop($0) > drop($1) }.prefix(3))
       + Array(mistakes.sorted { drop($0) > drop($1) }.prefix(2))
       + Array(good.prefix(2))
-    return picked.sorted { $0.ply < $1.ply }.compactMap { r in
+    var highlights = picked.compactMap { r in
       make(m, r, kind: r.cls.isBad ? (missed.contains(r) ? .missed : .mistake) : .good)
     }
+    guard highlights.count < 2 else { return highlights.sorted { $0.id < $1.id } }
+    let candidates = mine.filter { r in
+      !r.cls.isBad && r.cls != .inaccuracy && !highlights.contains { abs($0.id - r.ply) <= 2 }
+    }
+    let times = mine.compactMap { m.thinkTimes[safe: $0.ply] ?? nil }.filter { $0.isFinite && $0 > 0 }.sorted()
+    if times.count >= 5 {
+      let threshold = max(12, times[times.count / 2] * 3)
+      let longMoves = candidates.compactMap { r -> (MoveRecord, Double)? in
+        guard theory[r.ply] == nil, let t = m.thinkTimes[safe: r.ply] ?? nil, t.isFinite, t >= threshold else { return nil }
+        return (r, t)
+      }.sorted { $0.1 == $1.1 ? $0.0.ply < $1.0.ply : $0.1 > $1.1 }
+      for (r, time) in longMoves {
+        guard [.best, .excellent].contains(r.cls), var h = make(m, r, kind: .study), !h.steps.isEmpty else { continue }
+        h.studyTitle = String(localized: "這一步你用了較多時間")
+        h.studyDetail = String(localized: "用時 \(Int(time.rounded())) 秒。可以再試一次，看看有哪些選擇。")
+        highlights.append(h)
+        break
+      }
+    }
+    if theoryStop, highlights.count < 2, let lastBook = theory.keys.max(), let name = theory[lastBook],
+       let r = m.records[safe: lastBook] ?? nil, !r.cls.isBad,
+       !highlights.contains(where: { abs($0.id - r.ply) <= 2 }),
+       var h = make(m, r, kind: .study, practice: false) {
+      h.studyTitle = String(localized: "這局的開局理論")
+      h.studyDetail = String(localized: "\(Openings.name(name))。\(r.san) 是這個局面已收錄的走法。")
+      highlights.append(h)
+    }
+    if highlights.isEmpty {
+      for r in candidates {
+        let p = line.plies[r.ply]
+        guard p.san.hasPrefix("O-O"), var h = make(m, r, kind: .study, practice: false) else { continue }
+        h.studyTitle = String(localized: "王車易位")
+        h.studyDetail = String(localized: "\(r.san) 讓王離開中央，也把車帶到更靠近中央的格子。")
+        highlights.append(h)
+        break
+      }
+    }
+    return highlights.sorted { $0.id < $1.id }
   }
 
   /// 單一一步（逐步復盤按「重走一下」）：錯失良機或當時有勝勢的算機會，其他算失誤
@@ -61,12 +123,14 @@ struct GameHighlight: Identifiable {
     return make(m, r, kind: chance ? .missed : .mistake)
   }
 
-  @MainActor private static func make(_ m: ReviewModel, _ r: MoveRecord, kind: Kind) -> GameHighlight? {
+  @MainActor private static func make(_ m: ReviewModel, _ r: MoveRecord, kind: Kind, practice: Bool = true) -> GameHighlight? {
       guard let line = m.line, let p = line.plies[safe: r.ply] else { return nil }
       let e = m.explanation(r.ply)
       let before = m.evals[safe: r.ply] ?? nil
-      let accept = (before ?? []).indices.filter { Difficulty.winGap(before!, index: $0) <= 3 }.compactMap { before![$0].best }
-      var h = GameHighlight(kind: kind, record: r, ply: p, explanation: e, steps: kind == .good ? [] : steps(e, pv: before?.first?.pv ?? [], fen: p.fenBefore), accept: accept)
+      let lines = before ?? []
+      var accept = lines.indices.filter { Difficulty.winGap(lines, index: $0) <= 3 }.compactMap { lines[$0].best }
+      if kind == .study, [.best, .excellent].contains(r.cls) { accept.append(r.uci) }
+      var h = GameHighlight(kind: kind, record: r, ply: p, explanation: e, steps: kind == .good || !practice ? [] : steps(e, pv: before?.first?.pv ?? [], fen: p.fenBefore), accept: accept)
       h.headline = e?.headline
       h.reason = h.steps.first.flatMap { $0.caption.isEmpty ? nil : $0.caption } ?? e?.plainReasons.first
       let pun = r.cls == .best || r.cls == .excellent
@@ -125,19 +189,28 @@ struct GameHighlight: Identifiable {
 /// 好棋停一下誇一句；錯失的機會、失誤停在走之前讓你找，找到打勾、一句為什麼，再播你當時走的那步，接著往下播
 @MainActor @Observable
 final class QuickReview {
-  enum Phase { case playing, praise, trying, solved, revealed, done }
+  enum Phase { case playing, praise, preview, trying, solved, revealed, done }
   let line: ChessLine
   let highlights: [GameHighlight]
+  /// 只看不考的停點（雙方）與超過名額沒停的步
+  let notices: [Int: ReviewNotice]
+  let skipped: [Int]
+  /// 停點的攻守關係（棋盤標示用，準備時先算好）
+  let relations: [Int: BoardRelations]
   let me: Side
   /// 每一步先算好的：評級、走完的分數（你的角度）、分數變化
   struct Note { let cls: MoveClass; let score: String; let delta: String?; let tag: String }
   let notes: [Note?]
   /// 每個局面白方的勝率（評分條）
   let whiteWins: [Double?]
+  /// 讓局勢逆轉的步（你的勝率從 65% 以上掉到 35% 以下，或反過來）
+  let reversals: Set<Int>
   private let evals: [[EngineLine]?]
   /// 走錯時對手的懲罰：（對手走的、那步做了什麼、走完的分數）
   private(set) var refute: (san: String, tag: String, score: String?)?
   private(set) var phase: Phase = .playing
+  private var began: TimeInterval?
+  private var endLogged = false
   private(set) var pos = 0
   private(set) var next = 0
   private(set) var fen: String
@@ -154,13 +227,21 @@ final class QuickReview {
 
   /// 一般的步播多快；好棋停多久
   static let gap: UInt64 = 320_000_000
+  /// 停點的前一步放慢，讓人知道接下來要停
+  static let slow: UInt64 = 900_000_000
+
+  /// 走完第 i 步之後就要停（只看的停點、好棋），或下一步是要你找的重點
+  private func pausesAfter(_ i: Int) -> Bool {
+    notices[i] != nil || highlights.contains { ($0.record.ply == i && !$0.interactive) || ($0.interactive && $0.record.ply == i + 1) }
+  }
   static let pause: UInt64 = 1_300_000_000
 
   private let resignedGame: Bool
 
-  init(line: ChessLine, highlights: [GameHighlight], me: Side, records: [MoveRecord?], evals: [[EngineLine]?], whiteWins: [Double?], tags: [String], resigned: Bool = false) {
+  init(line: ChessLine, highlights: [GameHighlight], notices: [Int: ReviewNotice] = [:], skipped: [Int] = [], relations: [Int: BoardRelations] = [:], me: Side, records: [MoveRecord?], evals: [[EngineLine]?], whiteWins: [Double?], tags: [String], resigned: Bool = false) {
     resignedGame = resigned
-    self.line = line; self.highlights = highlights; self.me = me; self.whiteWins = whiteWins; self.evals = evals
+    self.line = line; self.highlights = highlights; self.notices = notices; self.skipped = skipped; self.relations = relations; self.me = me; self.whiteWins = whiteWins; self.evals = evals
+    reversals = Swing.plies(whiteWins: whiteWins, me: me)
     fen = line.startFen
     // 分數用你的角度：+ 是你好、- 是對手好（引擎的分數是輪到誰走就從誰的角度）
     func score(_ k: Int) -> (text: String, value: Double?)? {
@@ -191,7 +272,7 @@ final class QuickReview {
   var whiteWin: Double { whiteWins[safe: pos].flatMap { $0 } ?? 0.5 }
 
   var current: GameHighlight? { highlights[safe: next] }
-  var tried: [GameHighlight] { highlights.filter(\.interactive) }
+  var tried: [GameHighlight] { highlights.filter { $0.interactive && ($0.kind != .study || results[$0.id] != nil) } }
   var found: Int { tried.filter { results[$0.id] == true }.count }
   /// 停著的重點（找步中、剛播到的好棋）
   var active: GameHighlight? { toast ?? ([.playing, .done].contains(phase) || notice != nil ? nil : current) }
@@ -199,17 +280,59 @@ final class QuickReview {
   var noticing: Bool { notice != nil }
   var canMove: Bool { phase == .trying && !busy }
 
+  /// 棋盤標示（只在停點畫，箭頭最多 3 條）：剛走那步灰；最佳步綠；威脅／牽制紅；保護藍細線
   var arrows: [Arrow] {
-    // 停在失誤上：這步從哪走到哪（紅），以及接下來最好的一步（你的失誤＝對手的懲罰，橘；對手的失誤＝你的機會，綠）
     if let k = notice {
       let p = line.plies[k]
-      var out = [arrow(p.uci, Color.red.opacity(0.85))]
+      var out = [arrow(p.uci, Self.played)]
       // 下一步就要你自己找：不先畫出最佳步（不然答案就洩露了）
-      if !askNext(after: k), let u = (evals[safe: k + 1] ?? nil)?.first?.best { out.append(arrow(u, p.mover == me ? Brand.orange : Brand.bestArrow)) }
-      return out
+      let from = notices[k].map { $0.bestFrom } ?? k + 1
+      if !askNext(after: k), let f = from, let u = (evals[safe: f] ?? nil)?.first?.best {
+        // 你的失誤：畫對手接下來的懲罰（紅）；其他：畫該走的最佳步（綠）
+        out.append(arrow(u, f == k + 1 && p.mover == me ? Self.threat : Brand.bestArrow))
+      }
+      if !askNext(after: k), let r = relations[k] { out += Self.pinOrThreat(r, moved: p.to, existing: out) }
+      return Array(out.prefix(3))
+    }
+    if let t = toast {
+      var out = [arrow(t.ply.uci, Self.played)]
+      if t.studyTitle != nil, t.kind == .good, let prev = relations[t.record.ply - 1]?.realThreat {
+        out.append(Arrow(from: prev.from, to: prev.to, color: Self.threat))
+      }
+      if t.kind == .good, let r = relations[t.record.ply] {
+        if t.studyTitle != nil { out += r.defends.prefix(3 - out.count).map { Arrow(from: $0.from, to: $0.to, color: Self.defend, thin: true) } }
+        else { out += Self.pinOrThreat(r, moved: t.ply.to, existing: out) }
+      }
+      return Array(out.prefix(3))
     }
     guard phase == .revealed || phase == .solved, alt == nil, let u = current?.steps.first?.uci else { return [] }
     return [Arrow(from: String(u.prefix(2)), to: String(u.dropFirst(2).prefix(2)), color: Brand.bestArrow)]
+  }
+
+  /// 格子標示：只看的停點把沒保護又被攻擊的子塗紅；守住威脅時把被保護的子圈藍
+  var marks: [SquareMark] {
+    if let k = notice, !askNext(after: k), let r = relations[k] {
+      return r.hanging.prefix(2).map { SquareMark(square: $0, color: Self.threat) }
+    }
+    if let t = toast, t.studyTitle != nil, t.kind == .good, let r = relations[t.record.ply] {
+      return r.defends.prefix(2).map { SquareMark(square: $0.to, color: Self.defend, ring: true) }
+    }
+    return []
+  }
+
+  static let played = Color.gray.opacity(0.75)
+  static let threat = Color(hex: 0xD64545)
+  static let defend = Color(hex: 0x3B82F6)
+
+  /// 牽制優先（跟剛走的子有關的那條，從發動的子畫到後面的子），其次是這步準備的威脅
+  private static func pinOrThreat(_ r: BoardRelations, moved: String, existing: [Arrow]) -> [Arrow] {
+    if let pin = r.pins.first(where: { $0.from == moved || $0.pinned == moved || $0.behind == moved }) {
+      return [Arrow(from: pin.from, to: pin.behind, color: threat)]
+    }
+    if let t = r.realThreat, !existing.contains(where: { $0.from == t.from && $0.to == t.to }) {
+      return [Arrow(from: t.from, to: t.to, color: threat)]
+    }
+    return []
   }
   /// 第 k 手之後緊接著就是要你找最佳步的重點
   private func askNext(after k: Int) -> Bool { current.map { $0.interactive && $0.record.ply == k + 1 } ?? false }
@@ -228,16 +351,27 @@ final class QuickReview {
 
   /// 教練這時候說的話：（表情、標題、一句說明）—都是先算好的字串
   var say: (mood: String, title: String, detail: String?) {
+    if let k = notice, let stop = notices[k] { return (stop.mood, stop.title, stop.detail) }
     if let k = notice, let n = notes[safe: k] ?? nil {
       let p = line.plies[k], mine = p.mover == me
-      let title = mine ? String(localized: "你 \(p.san)：\(n.cls.zh)") : String(localized: "對手 \(p.san)：\(n.cls.zh)，你的機會來了")
+      let turned = reversals.contains(k)
+      let title = turned
+        ? (mine ? String(localized: "你 \(p.san)：局勢逆轉") : String(localized: "對手 \(p.san)：局勢逆轉，你的機會來了"))
+        : (mine ? String(localized: "你 \(p.san)：\(n.cls.zh)") : String(localized: "對手 \(p.san)：\(n.cls.zh)，你的機會來了"))
       let arrow = mine ? String(localized: "橘色箭頭是對手接下來的好棋") : String(localized: "綠色箭頭是你可以抓的機會")
       // 下一步要你自己找：不提箭頭（沒有畫），標籤也只說評級——解說的標題像「送子：e5 的馬」會直接講出要吃哪裡
       let ask = askNext(after: k)
-      let score = Self.scoreText(ask ? n.cls.zh : n.tag, score: n.score, delta: n.delta)
-      return (mine ? "sad" : "point", title, ask ? score : score + "\n" + arrow)
+      var score = Self.scoreText(ask ? n.cls.zh : n.tag, score: n.score, delta: n.delta)
+      var rising = false
+      if turned, let b = whiteWins[safe: k] ?? nil, let a = whiteWins[safe: k + 1] ?? nil {
+        let from = Swing.percent(b, me: me), to = Swing.percent(a, me: me)
+        rising = to > from
+        score += "\n" + String(localized: "你的勝率 \(from)% → \(to)%")
+      }
+      return (mine ? (rising ? "happy" : "sad") : "point", title, ask ? score : score + "\n" + arrow)
     }
     if let t = toast {
+      if let title = t.studyTitle { return ("point", title, t.studyDetail) }
       let n = notes[safe: t.record.ply] ?? nil
       let change = n.map { Self.scoreText($0.tag, score: $0.score, delta: $0.delta) }
       return ("happy", t.praise ?? String(localized: "好棋！"), [t.reason, change].compactMap { $0 }.joined(separator: "\n"))
@@ -250,6 +384,7 @@ final class QuickReview {
     }
     guard let h = current, phase != .done else { return ("cheer", String(localized: "這局看完了"), nil) }
     switch phase {
+    case .preview: return ("think", h.studyTitle ?? h.kind.zh, h.studyDetail)
     case .playing, .praise, .done: return ("cheer", String(localized: "這局看完了"), nil)
     case .trying:
       if wrongs > 0 {
@@ -260,7 +395,7 @@ final class QuickReview {
         return ("sad", busy ? String(localized: "看看對手會怎麼走…") : String(localized: "不是這步，再想想"), hint ? h.hint : nil)
       }
       let prev = pos > 0 ? String(localized: "對手剛走了 \(line.plies[pos - 1].san)") : nil
-      let lead = h.chanceType.map { String(localized: "這裡有個「\($0)」的機會！") } ?? (h.kind == .missed ? String(localized: "這裡有個機會！") : String(localized: "這一步要小心。"))
+      let lead = reversals.contains(h.record.ply) ? String(localized: "這一步是這局的轉折點。") : h.chanceType.map { String(localized: "這裡有個「\($0)」的機會！") } ?? (h.kind == .missed ? String(localized: "這裡有個機會！") : String(localized: "這一步要小心。"))
       return ("think", String(localized: "\(lead)找出最好的一步"),
               hint ? h.hint : [prev, h.headline].compactMap { $0 }.joined(separator: "・"))
     case .solved: return ("cheer", alt.map { String(localized: "\($0) 也可以！") } ?? String(localized: "就是這步！\(h.bestSan)"), h.reason)
@@ -271,6 +406,7 @@ final class QuickReview {
   // MARK: 流程
 
   func start() {
+    began = ProcessInfo.processInfo.systemUptime; endLogged = false
     Task { await StockfishService.shared.holdBackground(true) }
     run()
   }
@@ -285,6 +421,11 @@ final class QuickReview {
   }
 
   func stop() {
+    if let began, !endLogged {
+      endLogged = true
+      Telemetry.log("quick_review_exit", ["position": pos, "plies": line.plies.count,
+                                          "duration_ms": Int((ProcessInfo.processInfo.systemUptime - began) * 1000)])
+    }
     attempt = UUID()
     Task { await StockfishService.shared.holdBackground(false) }
   }
@@ -301,11 +442,11 @@ final class QuickReview {
       while a == attempt, pos < line.plies.count {
         if let x = current, x.record.ply == pos, x.interactive {
           wrongs = 0; hint = false; alt = nil; refute = nil
-          phase = .trying
+          phase = x.kind == .study && onSingleDone == nil ? .preview : .trying
           return
         }
         let p = line.plies[pos]
-        try? await Task.sleep(nanoseconds: Self.gap)
+        try? await Task.sleep(nanoseconds: pausesAfter(p.index) ? Self.slow : Self.gap)
         guard a == attempt else { return }
         show(p.fenAfter, last: (p.from, p.to))
         Sounds.play(for: p)
@@ -318,7 +459,7 @@ final class QuickReview {
           return
         }
         // 失誤（雙方都算，不精確不停）：停下來讓人知道這裡出錯了，按「繼續」再播
-        if let n = notes[safe: p.index] ?? nil, n.cls.isBad {
+        if notices[p.index] != nil {
           notice = p.index
           phase = .praise
           Haptics.bump()
@@ -328,6 +469,17 @@ final class QuickReview {
       guard a == attempt else { return }
       finish()
     }
+  }
+
+  func beginStudy() {
+    guard phase == .preview else { return }
+    phase = .trying
+  }
+
+  func skipStudy() {
+    guard phase == .preview else { return }
+    next += 1
+    run()
   }
 
   /// 好棋看完了：接著播
@@ -341,7 +493,11 @@ final class QuickReview {
 
   private func finish() {
     phase = .done
-    Telemetry.log("quick_review_done", ["found": found, "tried": tried.count, "highlights": highlights.count])
+    if let began, !endLogged {
+      endLogged = true
+      Telemetry.log("quick_review_done", ["found": found, "tried": tried.count, "highlights": highlights.count,
+                                          "duration_ms": Int((ProcessInfo.processInfo.systemUptime - began) * 1000)])
+    }
     if resignedGame { resigned = true }
     ReviewStore.shared.markPracticed()
     Task { await StockfishService.shared.holdBackground(false) }
@@ -359,6 +515,10 @@ final class QuickReview {
       if results[h.id] == nil { results[h.id] = wrongs == 0 && !hint }
       phase = .solved
       resume()
+      return
+    }
+    if h.kind == .study {
+      reveal()
       return
     }
     // 不是這步：子走過去，對手走出懲罰的那一步（讓你看到為什麼不好），停一下再退回來重試
@@ -437,7 +597,7 @@ final class QuickReview {
     attempt = UUID()
     toast = nil
     notice = nil
-    while let x = current, !x.interactive || x.record.ply < pos { next += 1 }
+    while let x = current, x.record.ply < pos { next += 1 }
     guard let x = current else {
       pos = line.plies.count
       show(line.fen(at: pos), last: nil)
@@ -477,7 +637,7 @@ struct QuickPanel: View {
       }
       .font(.subheadline.weight(.bold)).foregroundStyle(q.active?.kind.color ?? (q.noticing ? Color(hex: 0xD64545) : Brand.ink))
       HStack(alignment: .top, spacing: 10) {
-        Image("coach-\(s.mood)").resizable().scaledToFit().frame(width: 56, height: 56)
+        Image(ChessAccentAsset.name(s.mood)).resizable().scaledToFit().accessibilityHidden(true).frame(width: 56, height: 56)
         VStack(alignment: .leading, spacing: 4) {
           Text(s.title).font(.headline).foregroundStyle(Brand.ink).fixedSize(horizontal: false, vertical: true)
           if let d = s.detail, !d.isEmpty { Text(d).font(.subheadline).foregroundStyle(Brand.ink.opacity(0.8)).fixedSize(horizontal: false, vertical: true) }
@@ -492,7 +652,7 @@ struct QuickPanel: View {
   private var summary: some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 10) {
-        Image(q.found == q.tried.count ? "coach-cheer" : "coach-happy").resizable().scaledToFit().frame(width: 56, height: 56)
+        Image("accent-rook").resizable().scaledToFit().accessibilityHidden(true).frame(width: 56, height: 56)
         VStack(alignment: .leading, spacing: 2) {
           Text("這局看完了").font(.headline).foregroundStyle(Brand.ink)
           if !q.tried.isEmpty { Text("更好的一步，你找到了 \(q.found)/\(q.tried.count) 個").font(.subheadline).foregroundStyle(q.found == q.tried.count ? .green : Brand.ink) }
@@ -513,9 +673,184 @@ struct QuickPanel: View {
         }
         .buttonStyle(.plain)
       }
-      if q.found < q.tried.count, AutoAnalyzer.autoAdd {
-        Text("錯失的機會已經放進複習題庫，過幾天會再練一次").font(.footnote).foregroundStyle(.secondary)
+      ForEach(q.notices.values.sorted { $0.ply < $1.ply }, id: \.ply) { n in
+        Button { jump(n.ply) } label: {
+          HStack(spacing: 8) {
+            Image(systemName: "eye").foregroundStyle(Brand.teal)
+            Text("第 \(q.line.plies[n.ply].moveNumber) 手・\(n.title)").font(.subheadline).foregroundStyle(Brand.ink).lineLimit(1)
+            Spacer()
+            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+          }
+          .padding(.horizontal, 12).padding(.vertical, 8)
+          .background(Brand.cream, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+      }
+      if !q.skipped.isEmpty {
+        Text("另外 \(q.skipped.count) 步也值得看").font(.subheadline.weight(.semibold)).foregroundStyle(Brand.ink).padding(.top, 4)
+        ForEach(q.skipped, id: \.self) { ply in
+          Button { jump(ply) } label: {
+            HStack(spacing: 8) {
+              Text("第 \(q.line.plies[ply].moveNumber) 手").font(.subheadline).foregroundStyle(Brand.ink)
+              Text(q.line.plies[ply].mover == q.me ? String(localized: "你 \(q.line.plies[ply].san)") : String(localized: "對手 \(q.line.plies[ply].san)"))
+                .font(.subheadline).foregroundStyle(.secondary)
+              Spacer()
+              Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 6)
+          }
+          .buttonStyle(.plain)
+        }
+      }
+      // 1.1.0 起練習／複習入口已收起：不提複習題庫
+
+    }
+  }
+}
+
+/// 只看不考的停點（雙方都有）：走完這步停下來，兩行字＋棋盤標示
+struct ReviewNotice: Equatable {
+  let ply: Int
+  let title: String
+  let detail: String?
+  let mood: String
+  /// 畫哪一個局面的引擎最佳步（綠箭頭）；nil 不畫
+  let bestFrom: Int?
+}
+
+/// 一局快速復盤的停點安排（2026-11-10 grill 定案）
+struct ReviewPlan {
+  var highlights: [GameHighlight]
+  var notices: [Int: ReviewNotice]
+  /// 值得講但超過名額、沒停下來的步（總結裡列出、可跳轉）
+  var skipped: [Int]
+  static let cap = 8, mineQuota = 4, interactiveCap = 4
+}
+
+extension GameHighlight {
+  private struct Candidate { let ply: Int; let mine: Bool; let score: Double; let good: Bool; let defended: String? }
+
+  /// 停點標準：局勢實質改變（走棋方勝率掉 ≥15 個百分點或逆轉；已贏定／已輸定不算），或有人抓到機會、走出好棋，或你守住對手的威脅
+  /// defended：你這一步守住的對手威脅（ply → 對手威脅的那步 SAN），最低優先
+  @MainActor static func plan(_ m: ReviewModel, theory: [Int: String] = [:], opening: (title: String, detail: String?)? = nil,
+                              defended: [Int: String] = [:]) -> ReviewPlan {
+    guard let line = m.line else { return ReviewPlan(highlights: [], notices: [:], skipped: []) }
+    let swings = Swing.plies(whiteWins: m.whiteWins, me: m.me)
+    let records = m.records
+    func drop(_ r: MoveRecord) -> Double { r.winBefore - r.winAfter }
+    var candidates: [Candidate] = []
+    for r in records.compactMap({ $0 }) {
+      let mine = r.mover == m.me, turned = swings.contains(r.ply)
+      let decided = (r.winBefore >= 0.9 && r.winAfter >= 0.9) || r.winBefore <= 0.1
+      if r.cls.isBad {
+        if !decided, drop(r) >= 0.15 || turned { candidates.append(Candidate(ply: r.ply, mine: mine, score: drop(r) + (turned ? 0.3 : 0), good: false, defended: nil)) }
+        continue
+      }
+      let prev = records[safe: r.ply - 1] ?? nil
+      let prevDrop = prev.map(drop) ?? 0
+      let punished = [.best, .excellent].contains(r.cls) && prev?.cls.isBad == true && prevDrop >= 0.15
+      if [.brilliant, .great].contains(r.cls) || punished {
+        candidates.append(Candidate(ply: r.ply, mine: mine, score: max(0.2, prevDrop), good: true, defended: nil))
+      } else if mine, let threat = defended[r.ply] {
+        candidates.append(Candidate(ply: r.ply, mine: true, score: 0.01, good: true, defended: threat))
       }
     }
+    // 依影響排序；先保留使用者自己的名額，再依分數補滿；前後 2 步內只留一個（優先使用者的步）
+    let sorted = candidates.sorted { $0.score == $1.score ? $0.ply < $1.ply : $0.score > $1.score }
+    var picked: [Candidate] = []
+    func add(_ c: Candidate) {
+      if picked.contains(where: { $0.ply == c.ply }) { return }
+      if let i = picked.firstIndex(where: { abs($0.ply - c.ply) <= 2 }) {
+        if c.mine && !picked[i].mine { picked[i] = c }
+        return
+      }
+      picked.append(c)
+    }
+    for c in sorted where c.mine && picked.filter(\.mine).count < ReviewPlan.mineQuota { add(c) }
+    for c in sorted where picked.count < ReviewPlan.cap { add(c) }
+    let chosen = Set(picked.map(\.ply))
+    // 沒停的：超過名額、也沒有併進前後 2 步內某個停點的事件
+    let skipped = candidates.map(\.ply).filter { ply in !chosen.contains(where: { abs($0 - ply) <= 2 }) }.sorted()
+
+    var highlights: [GameHighlight] = []
+    var notices: [Int: ReviewNotice] = [:]
+    let interactive = Set(picked.filter { c in
+      c.mine && !c.good
+    }.sorted { $0.score > $1.score }.prefix(ReviewPlan.interactiveCap).map(\.ply))
+    for c in picked {
+      guard let r = records[safe: c.ply] ?? nil, let p = line.plies[safe: c.ply] else { continue }
+      if c.mine, !c.good, interactive.contains(c.ply) {
+        let before = m.evals[safe: c.ply] ?? nil
+        let kind: Kind = r.cls == .miss || before.map { ReviewBuilder.isOpportunity(r, before: $0) } == true ? .missed : .mistake
+        if let h = make(m, r, kind: kind), h.interactive { highlights.append(h); continue }
+      }
+      if c.mine, c.good, var h = make(m, r, kind: .good) {
+        if let threat = c.defended {
+          h.studyTitle = String(localized: "你守住了：\(p.san)")
+          h.studyDetail = String(localized: "對手 \(threat) 製造了威脅，你沒有讓它得逞。")
+        }
+        highlights.append(h); continue
+      }
+      notices[c.ply] = notice(m, r, p, turned: swings.contains(c.ply))
+    }
+    // 對手沒抓住你的失誤：併成一個停點（你那步只看時，停在對手那步一起講；你那步要找答案時，對手那步補一句、不另算名額）
+    for c in picked where c.mine && !c.good {
+      guard let opp = records[safe: c.ply + 1] ?? nil, opp.cls.isBad || drop(opp) >= 0.15,
+            let mine = records[safe: c.ply] ?? nil, let p = line.plies[safe: c.ply + 1] else { continue }
+      notices[c.ply] = nil
+      notices[c.ply + 1] = ReviewNotice(ply: c.ply + 1,
+                                        title: String(localized: "對手 \(p.san)：沒抓到你 \(mine.san) 的漏洞"),
+                                        detail: opp.bestSan.map { String(localized: "綠色箭頭是對手可以走的 \($0)") },
+                                        mood: "point", bestFrom: c.ply + 1)
+    }
+    // 長考：只看使用者的步、名額有剩才補
+    if highlights.count + notices.count < ReviewPlan.cap {
+      let taken = Set(highlights.map(\.id)).union(notices.keys)
+      let mine = records.compactMap { $0 }.filter { $0.mover == m.me }
+      let times = mine.compactMap { m.thinkTimes[safe: $0.ply] ?? nil }.filter { $0.isFinite && $0 > 0 }.sorted()
+      if times.count >= 5 {
+        let threshold = max(12, times[times.count / 2] * 3)
+        let long = mine.compactMap { r -> (MoveRecord, Double)? in
+          guard theory[r.ply] == nil, [.best, .excellent].contains(r.cls), !taken.contains(where: { abs($0 - r.ply) <= 2 }),
+                let t = m.thinkTimes[safe: r.ply] ?? nil, t.isFinite, t >= threshold else { return nil }
+          return (r, t)
+        }.sorted { $0.1 > $1.1 }
+        for (r, time) in long {
+          guard var h = make(m, r, kind: .study), !h.steps.isEmpty else { continue }
+          h.studyTitle = String(localized: "這一步你用了較多時間")
+          h.studyDetail = String(localized: "用時 \(Int(time.rounded())) 秒。可以再試一次，看看有哪些選擇。")
+          highlights.append(h)
+          break
+        }
+      }
+    }
+    if let opening, let ply = openingPly(m, theory: theory, taken: Set(highlights.map(\.id)).union(notices.keys)),
+       let r = records[safe: ply] ?? nil, var h = make(m, r, kind: .study, practice: false) {
+      h.studyTitle = opening.title
+      h.studyDetail = opening.detail
+      highlights.append(h)
+    }
+    return ReviewPlan(highlights: highlights.sorted { $0.id < $1.id }, notices: notices, skipped: skipped)
+  }
+
+  /// 只看的停點文字：第一行發生什麼，第二行原因或勝率變化
+  @MainActor private static func notice(_ m: ReviewModel, _ r: MoveRecord, _ p: Ply, turned: Bool) -> ReviewNotice {
+    let mine = r.mover == m.me
+    let title: String
+    if r.cls.isBad {
+      title = turned
+        ? (mine ? String(localized: "你 \(p.san)：局勢逆轉") : String(localized: "對手 \(p.san)：局勢逆轉，你的機會來了"))
+        : (mine ? String(localized: "你 \(p.san)：\(r.cls.zh)") : String(localized: "對手 \(p.san)：\(r.cls.zh)，你的機會來了"))
+    } else {
+      title = mine ? String(localized: "你 \(p.san)：\(r.cls.zh)") : String(localized: "對手 \(p.san)：\(r.cls.zh)")
+    }
+    var detail: String?
+    if turned, let b = m.whiteWins[safe: r.ply] ?? nil, let a = m.whiteWins[safe: r.ply + 1] ?? nil {
+      detail = String(localized: "你的勝率 \(Swing.percent(b, me: m.me))% → \(Swing.percent(a, me: m.me))%")
+    } else if let e = m.explanation(r.ply) {
+      detail = ExplainJS.plain(e.headline)
+    }
+    return ReviewNotice(ply: r.ply, title: title, detail: detail, mood: mine ? (r.cls.isBad ? "sad" : "happy") : "point",
+                        bestFrom: r.cls.isBad ? r.ply + 1 : nil)
   }
 }

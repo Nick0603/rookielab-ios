@@ -76,6 +76,9 @@ enum ExplainJS {
 
   /// 解說引擎在自己的執行緒上跑（一次幾十到幾百毫秒），主執行緒只負責畫面：載入動畫、換卡才不會卡
   private static let queue = DispatchQueue(label: "rookielab.explain-js", qos: .userInitiated)
+  /// 棋盤標示與解說共用同一個 JSContext，所以用同一個執行緒
+  static var boardQueue: DispatchQueue { queue }
+  nonisolated(unsafe) static var contextForBoard: JSContext? { context }
 
   nonisolated(unsafe) private static let context: JSContext? = {
     guard let url = Bundle.main.url(forResource: "explain", withExtension: "js"), let src = try? String(contentsOf: url, encoding: .utf8),
@@ -213,5 +216,73 @@ extension MoveRecord {
     let who = mover == me ? String(localized: "你") : String(localized: "對手")
     let a = Grading.standing(winBefore), b = Grading.standing(winAfter)
     return a == b ? String(localized: "\(who)：維持\(a)") : String(localized: "\(who)：\(a) → \(b)")
+  }
+}
+
+/// 棋盤標示的資料（網站 moveRelations＋沒保護被攻擊的子），格子用 "e4" 這種寫法
+struct BoardRelations: Decodable, Equatable {
+  struct Link: Decodable, Equatable { let from: String; let to: String }
+  struct Pin: Decodable, Equatable { let from: String; let pinned: String; let behind: String }
+  struct Threat: Decodable, Equatable { let from: String; let to: String; let kind: String; let san: String }
+  var attacks: [Link] = []
+  var defends: [Link] = []
+  var attackedBy: [Link] = []
+  var pins: [Pin] = []
+  var threats: [Threat] = []
+  var hanging: [String] = []
+  /// 真正的威脅：下一步能白吃子或將殺
+  var realThreat: Threat? { threats.first { $0.kind == "win" || $0.kind == "mate" } }
+}
+
+extension ExplainJS {
+  nonisolated private static func boardCompute(fen: String, san: String) -> BoardRelations? {
+    guard let fn = contextForBoard?.objectForKeyedSubscript("RLBoard"), !fn.isUndefined,
+          let out = fn.call(withArguments: [fen, san])?.toString(), out != "null", out != "undefined" else { return nil }
+    return try? JSONDecoder().decode(BoardRelations.self, from: Data(out.utf8))
+  }
+
+  /// 一次在解說執行緒上算好多步（主執行緒不等）
+  static func boards(_ plies: [Ply]) async -> [Int: BoardRelations] {
+    await withCheckedContinuation { c in
+      boardQueue.async {
+        var out: [Int: BoardRelations] = [:]
+        for p in plies { if let r = boardCompute(fen: p.fenBefore, san: p.san) { out[p.index] = r } }
+        c.resume(returning: out)
+      }
+    }
+  }
+}
+
+/// 開局原則觀察：第幾個半回合（1 起算，同網站）、哪一類、一句話
+struct OpeningNote: Decodable, Equatable { let ply: Int; let tag: String; let text: String }
+
+extension ExplainJS {
+  static func openingNotes(_ sans: [String], side: Side) async -> [OpeningNote] {
+    guard let json = try? JSONEncoder().encode(sans), let list = String(data: json, encoding: .utf8) else { return [] }
+    let lang = AppLang.js
+    return await withCheckedContinuation { c in
+      boardQueue.async {
+        let fn = contextForBoard?.objectForKeyedSubscript("RLOpening")
+        let out = fn?.call(withArguments: [list, side == .white ? "w" : "b", lang])?.toString() ?? "[]"
+        c.resume(returning: (try? JSONDecoder().decode([OpeningNote].self, from: Data(out.utf8))) ?? [])
+      }
+    }
+  }
+
+  /// 挑一條有證據的：早出后要在之後 4 手內又被迫動后；其他三類本身就是證據。先看使用者，再看對手
+  static func openingObservation(_ line: ChessLine, me: Side) async -> String? {
+    let sans = line.plies.map(\.san)
+    func usable(_ n: OpeningNote, _ side: Side) -> Bool {
+      guard n.ply <= 20 else { return false }
+      // 被將軍時的應對（例如用象擋）不算違反開局原則
+      if n.ply >= 2, line.plies[n.ply - 2].san.hasSuffix("+") { return false }
+      if n.tag != "early_queen" { return true }
+      let later = line.plies.dropFirst(n.ply).filter { $0.mover == side }.prefix(4)
+      return later.contains { $0.san.hasPrefix("Q") }
+    }
+    if let n = await openingNotes(sans, side: me).first(where: { usable($0, me) }) { return n.text }
+    let other: Side = me == .white ? .black : .white
+    if let n = await openingNotes(sans, side: other).first(where: { usable($0, other) }) { return String(localized: "對手 · \(n.text)") }
+    return nil
   }
 }

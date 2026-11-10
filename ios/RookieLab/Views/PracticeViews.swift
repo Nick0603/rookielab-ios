@@ -548,7 +548,7 @@ struct PuzzleSessionView: View {
           } else {
             let lead = item.lead
             HStack(alignment: .top, spacing: 10) {
-              Image(wrongs == 0 ? "coach-think" : "coach-sad").resizable().scaledToFit().frame(width: 48, height: 48)
+              Image(wrongs == 0 ? "accent-bishop" : "accent-pawn").resizable().scaledToFit().accessibilityHidden(true).frame(width: 48, height: 48)
               VStack(alignment: .leading, spacing: 3) {
                 Text(wrongs == 0 ? String(localized: "\(lead.title)找出最好的一步（\(mySide == .white ? String(localized: "白方") : String(localized: "黑方"))）") : String(localized: "不是這步，再想想"))
                   .font(.subheadline.weight(.semibold)).foregroundStyle(wrongs == 0 ? Brand.ink : Brand.orange)
